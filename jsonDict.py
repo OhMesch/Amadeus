@@ -1,0 +1,36 @@
+import json
+import os.path
+
+class jsonDict():
+	def __init__(self, jsonFileName):
+		self.data = dict()
+		self.jsonFileName = jsonFileName
+
+		if os.path.exists(jsonFileName + ".json"):
+			self.loadJ()
+
+	def __str__(self):
+		return(self.data.__str__())
+
+	def __getitem__(self, key):
+		return(self.data[str(key)])
+
+	def __setitem__(self, key, value):
+		self.data[str(key)] = str(value)
+		self.writeJ()
+
+	def __delitem__(self, key):
+		charKey = str(key)
+		if charKey in self.data: del self.data[charKey]
+		self.writeJ()
+
+	def __contains__(self, key):
+		return(bool(key in self.data))
+
+	def loadJ(self):
+		with open(self.jsonFileName+".json","r") as fileIO:
+			self.data = json.load(fileIO)
+
+	def writeJ(self):
+		with open(self.jsonFileName+".json","w") as fileIO:
+			json.dump(self.data,fileIO)
