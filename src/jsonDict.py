@@ -1,12 +1,17 @@
-import json
+import sys
 import os.path
+import json
 
 class jsonDict():
 	def __init__(self, jsonFileName):
 		self.data = dict()
-		self.jsonFileName = jsonFileName
+		jsonDir = sys.path[0]+"\\..\\json\\"
+		self.jsonFileName = jsonDir+jsonFileName
 
-		if os.path.exists(jsonFileName + ".json"):
+		if not os.path.exists(jsonDir):
+			os.makedirs(jsonDir)
+
+		if os.path.exists(jsonDir+jsonFileName + ".json"):
 			self.loadJ()
 
 	def __str__(self):
