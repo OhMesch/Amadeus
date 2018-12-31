@@ -26,3 +26,9 @@ class Amadeus():
 	def addStack(self, show, ep=1):
 		self.stack[show] = ep
 
+	def addUrl(self, anime, url):
+		self.url[anime] = url
+
+	def getStack(self):
+		return(self.stack)
+
