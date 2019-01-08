@@ -24,9 +24,6 @@ class Amadeus():
 	def removeAlias(self, alias):
 		del self.alias[alias]
 
-	def getTitleFromAlias(self, alias):
-		return(self.alias[alias])
-
 	def addStack(self, show, ep=1):
 		self.stack[show] = ep
 
@@ -36,8 +33,23 @@ class Amadeus():
 	def removeStack(self, show):
 		del(self.stack[show])
 
-	def getEpisodeFromUrl(self,urlHome, episode):
-		return(CrunchyWebScraper.getEpisodeLink(urlHome, episode))
+	def getEpisodeFromTitle(self, trueTitle, episode):
+		return(CrunchyWebScraper.getEpisodeLink(self.getUrlFromTitle(trueTitle), episode))
+
+	def getUrlFromTitle(self, trueTitle):
+		return(self.url[trueTitle])
 
 	def addUrl(self, anime, url):
 		self.url[anime] = url
+
+	def getTitleFromKey(self, key):
+		if key in self.stack:
+			return(key)
+		if key in self.alias:
+			return self.alias[key]
+
+	def getCurrEpNumber(self, anime):
+		return(self.stack[anime])
+
+	def incrimentStack(self, anime):
+		self.stack[anime] += 1

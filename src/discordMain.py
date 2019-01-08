@@ -28,8 +28,17 @@ async def on_message(message):
     elif message.content.startswith('!stack+'):
         await addAnimeToStack(message)
 
+    elif message.content.startswith('!stack-'):
+        await removeAnimeFromStack(message)
+
     elif message.content.startswith('!stack'):
         await printStack(message)
+
+    elif message.content.startswith('!alias+'):
+        await addAlias(message)
+
+    elif message.content.startswith('!get+'):
+        await getCurrEpAndIncriment(message):
 
 async def help(message):
     helpMsg = 'Hello {0.author.mention}, I am Amadeus!'.format(message)
@@ -57,8 +66,46 @@ async def addAnimeToStack(message):
         errMsg = 'Please confirm you have entered a valid url address.'
         await client.send_message(message.channel, errMsg)
 
+async def removeAnimeFromStack(message):
+    errMsg = 'Not currently implimented.'
+    await client.send_message(message.channel, errMsg)
+
 async def printStack(message):
     stack = amadeusDriver.getStack()
     await client.send_message(message.channel, stack)
+
+async def addAlias(message):
+    words = message.content.split()
+    if len(words) < 3:
+        errMsg = 'Please enter the form of: "!alias+ anime-stack-name newAlias".'
+        await client.send_message(message.channel, errMsg)
+        return
+    alias = "".join(words[2:])
+    cleanTitle = words[1].replace('-',' ').lower()
+    if cleanTitle in amadeusDriver.getStack():
+        amadeusDriver.addAlias(animeNameClean, alias)
+    else:
+        errMsg = 'Please confirm you have entered a valid anime name.'
+        await client.send_message(message.channel, errMsg)
+
+async def getCurrEpAndIncriment(message):
+    words = message.content.split()
+    if len(words) < 2:
+        errMsg = 'Please enter the form of: "!get+ animeTitle/animeAlias".'
+        await client.send_message(message.channel, errMsg)
+    key = "".join(words[1:])
+    trueKey = amadeusDriver.getTitleFromKey(key)
+    if trueKey:
+        currEpNum = amadeusDriver.getCurrEpNumber(trueKey)
+        currEpLink = amadeusDriver.getEpisodeFromTitle(trueKey)
+        if currEp:
+            succMsg = 'Please enjoy episode {0} of "{1}".\n{2}\nStack Updated.'.format(currEpNum,trueKey,currEpLink)
+            amadeusDriver.incrimentStack()
+            await client.send_message(message.channel, succMsg)
+        else:
+            errMsg = 'Could not find episode {0} of "{1}". Please double check it exists.\n{2}'.format(currEpNum,trueKey,amadeusDriver.getUrlFromTitle(trueKey))
+    else:
+        errMsg = '{0} not found in stack or alias list, please confirm the anime and try again.'.format(key)
+        await client.send_message(message.channel, errMsg)
 
 client.run(TokenDistributer.getToken())
