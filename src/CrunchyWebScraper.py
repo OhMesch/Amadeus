@@ -3,7 +3,14 @@ import re
 from bs4 import BeautifulSoup
 
 class CrunchyWebScraper(object):
-	def scrapeUrlForLinks(url):
+	def getEpisodeLink(url, requestedEp):
+		allEpLinks = CrunchyWebScraper.scrapeUrlForEpisodeLinks(url)
+		for epLink in allEpLinks:
+			episodeNum = epLink.split('/')[2].split('-')[1]
+			if int(episodeNum) == requestedEp:
+				return(epLink)
+
+	def scrapeUrlForEpisodeLinks(url):
 		try:
 			htmlSoup = CrunchyWebScraper.getHTMLFromURL(url)
 		except requests.exceptions.RequestException as err:
