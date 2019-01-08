@@ -24,6 +24,9 @@ class Amadeus():
 	def removeAlias(self, alias):
 		del self.alias[alias]
 
+	def getTitleFromAlias(self, alias):
+		return(self.alias[alias])
+
 	def addStack(self, show, ep=1):
 		self.stack[show] = ep
 
