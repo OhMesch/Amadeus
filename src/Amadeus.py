@@ -1,4 +1,5 @@
 from jsonDict import jsonDict
+from CrunchyWebScraper import CrunchyWebScraper
 
 class Amadeus():
 	def __init__(self):
@@ -32,3 +33,5 @@ class Amadeus():
 	def getStack(self):
 		return(self.stack)
 
+	def getEpisodeFromUrl(self,urlHome, episode):
+		return(CrunchyWebScraper.getEpisodeLink(urlHome, episode))
