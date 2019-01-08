@@ -27,11 +27,14 @@ class Amadeus():
 	def addStack(self, show, ep=1):
 		self.stack[show] = ep
 
-	def addUrl(self, anime, url):
-		self.url[anime] = url
-
 	def getStack(self):
 		return(self.stack)
 
+	def removeStack(self, show):
+		del(self.stack[show])
+
 	def getEpisodeFromUrl(self,urlHome, episode):
 		return(CrunchyWebScraper.getEpisodeLink(urlHome, episode))
+
+	def addUrl(self, anime, url):
+		self.url[anime] = url
