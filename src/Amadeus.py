@@ -7,7 +7,7 @@ class Amadeus():
 		self.stack = jsonDict("stack")
 		self.alias = jsonDict("alias")
 
-	def __str__(self):
+	def __str__(self): #could probably return each of these better
 		urlData = str(self.url)
 		stackData = str(self.stack)
 		aliasData = str(self.alias)
@@ -29,6 +29,9 @@ class Amadeus():
 
 	def getStack(self):
 		return(self.stack)
+
+	def getAllAlias(self):
+		return(self.alias)
 
 	def removeStack(self, show):
 		del(self.stack[show])
@@ -52,4 +55,4 @@ class Amadeus():
 		return(self.stack[anime])
 
 	def incrimentStack(self, anime):
-		self.stack[anime] += 1
+		self.stack[anime] = str(int(self.stack[anime]) + 1) #should just store as number??
