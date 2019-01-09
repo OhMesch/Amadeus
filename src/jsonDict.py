@@ -15,7 +15,11 @@ class jsonDict():
 			self.loadJ()
 
 	def __str__(self):
-		return(self.data.__str__())
+		string = "{\n"
+		for k,v in self.data.items():
+			string += "\t{0}: {1}\n".format(k,v)
+		string += "}"
+		return(string)
 
 	def __getitem__(self, key):
 		return(self.data[str(key)])
