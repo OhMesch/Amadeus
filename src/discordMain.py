@@ -42,6 +42,8 @@ async def on_message(message):
 
     elif message.content.startswith('!get+'):
         await getCurrEpAndIncriment(message)
+    elif message.content.startswith('!exit'):
+        await client.logout()
     else:
         await client.send_message(message.channel, message.content)
 
