@@ -6,7 +6,7 @@ class CrunchyWebScraper(object):
 	def getEpisodeLink(url, requestedEp):
 		allEpLinks = CrunchyWebScraper.scrapeUrlForEpisodeLinks(url)
 		for epLink in allEpLinks:
-			episodeNum = epLink.split('/')[2].split('-')[1]
+			episodeNum = epLink.split('/')[4].split('-')[1]
 			if episodeNum == requestedEp:
 				return(epLink)
 
