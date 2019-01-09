@@ -26,7 +26,7 @@ class CrunchyWebScraper(object):
 		return(htmlSoup)
 
 	def getEpisodeLinksFromHTML(html,title):
-		baseURL = "www.crunchyroll.com"
+		baseURL = "https://www.crunchyroll.com"
 		episodeLinks = []
 		for link in html.find_all(href=re.compile(title+"/episode")): 
 			newUrl = link.get('href')
