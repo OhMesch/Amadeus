@@ -59,19 +59,23 @@ async def help(message):
 
 async def addAnimeToStack(message):
     words = message.content.split()
-    if len(words) != 2:
-        errMsg = 'Please enter the form of: "!stack+ www.url-to-anime-home.com".'
+    if len(words) < 2:
+        errMsg = 'Please enter the form of: "!stack+ www.url-to-anime-home.com" "optional Alias".'
         await client.send_message(message.channel, errMsg)
         return
-    url = words[-1]
+    url = words[1]
     if validators.url(url):
         animeNameDirty = url.split("/")[-1]
-        animeNameClean = animeNameDirty.replace('-',' ').lower()
+        animeNameLower = animeNameDirty.replace('-',' ').lower()
+        animeNameClean = " ".join(list(map(lambda x: x.capitalize(), animeNameLower.split())))
         amadeusDriver.addUrl(animeNameClean, url)
         amadeusDriver.addStack(animeNameClean)
     else:
         errMsg = 'Please confirm you have entered a valid url address.'
         await client.send_message(message.channel, errMsg)
+    potentialAlias = " ".join(words[2:])
+    if potentialAlias:
+        amadeusDriver.addAlias(animeNameClean, potentialAlias)
 
 async def removeAnimeFromStack(message):
     errMsg = 'Not currently implimented.'
@@ -92,7 +96,8 @@ async def addAlias(message):
         await client.send_message(message.channel, errMsg)
         return
     alias = "".join(words[2:])
-    animeNameClean = words[1].replace('-',' ').lower()
+    animeNameLower = words[1].replace('-',' ').lower()
+    animeNameClean = " ".join(list(map(lambda x: x.capitalize(), animeNameLower.split())))
     if animeNameClean in amadeusDriver.getStack():
         amadeusDriver.addAlias(animeNameClean, alias)
         succMsg = 'Added "{0}" as an alias for "{1}".'.format(alias, animeNameClean)
