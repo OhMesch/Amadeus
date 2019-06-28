@@ -9,12 +9,12 @@ from CrunchyWebScraper import CrunchyWebScraper
 print("Grab Goblin Links")
 eps = CrunchyWebScraper.scrapeUrlForEpisodeLinks("https://www.crunchyroll.com/goblin-slayer")
 for ep in eps:
-	print(ep)
+    print(ep)
 
 print("\nGrab One Piece Links")
 eps = CrunchyWebScraper.scrapeUrlForEpisodeLinks("https://www.crunchyroll.com/one-piece")
 for ep in eps:
-	print(ep)
+    print(ep)
 
 print("\nGrab Goblin Ep 6")
 ep = CrunchyWebScraper.getEpisodeLink("https://www.crunchyroll.com/goblin-slayer", "6")
@@ -33,4 +33,11 @@ for i in range(5):
 print("\nJoJo's Links")
 eps = CrunchyWebScraper.scrapeUrlForEpisodeLinks("https://www.crunchyroll.com/jojos-bizarre-adventure")
 for ep in eps:
-	print(ep)
+    print(ep)
+
+print("\nGet JoJo Ep 1 from each Season")
+eps = CrunchyWebScraper.scrapeUrlForEpisodeLinks("https://www.crunchyroll.com/jojos-bizarre-adventure")
+for i in range(1,6):
+    print("Season {0}:".format(i))
+    epLink = CrunchyWebScraper.getEpisodeLink("https://www.crunchyroll.com/jojos-bizarre-adventure", "1", str(i))
+    print(epLink)
