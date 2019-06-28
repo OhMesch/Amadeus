@@ -57,7 +57,14 @@ async def help(message):
     helpMsg += '\nI exist to facilitate anime. 大　やばい\n'
 
     stackMsg = '\nTo get started, take a look at the stack with "!stack"'
-    stackMsg += '\nThe stack shows all the currently watched anime and the next episode to watch.\n'
+    stackMsg += '\nThe stack shows all the currently watched anime and the next episode to watch.'
+
+    addStackMsg += "\nTo add an anime to the stack, you will need the CrunchyRoll page corresponding to the anime you want to add."
+    addStackMsg += "\nOnce you have your anime url, add it to the stack in the form of: \"!stack+ www.url-to-anime-home.com\"."
+    addStackMsg += "\nAlternatively, if you would like to set an alias while adding the anime, use the syntax: \"!stack+ www.url-to-anime-home.com customAlias\".\n"
+
+    aliasMsg += "\nAlias' are anouther way to refer to, and interact with, an anime on the stack other than using the full stack name for an anime."
+    aliasMsg += "\nAlias can be added to an existing stack entry with either:\n{0}\n{1}".format("!alias+ anime-stack-name newAlias","!alias+ currAlias newAlias")
 
     helpMsg += stackMsg
     await  message.channel.send(helpMsg)
