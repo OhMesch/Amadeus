@@ -43,8 +43,11 @@ async def on_message(message):
     elif message.content.startswith('!get+'):
         await getCurrEpAndIncriment(message)
 
-    elif message.content.startswith('!set'):
+    elif message.content.startswith('!setEp'):
         await setCurrEp(message)
+
+    elif message.content.startswith('!setSeason'):
+        await setCurrSeason(message)
 
     elif message.content.startswith('!home'):
         await getHomeURL(message)
@@ -155,7 +158,7 @@ async def getCurrEpAndIncriment(message):
 async def setCurrEp(message):
     words = message.content.split()
     if len(words) < 3:
-        errMsg = 'Please enter the form of: "!set animeTitle/animeAlias epNum".'
+        errMsg = 'Please enter the form of: "!setEp animeTitle/animeAlias epNum".'
         await  message.channel.send(errMsg)
     ep = words[-1]
     try:
@@ -179,5 +182,26 @@ def cleanAnimeName(dirtyName):
     animeNameClean = " ".join(list(map(lambda x: x.capitalize(), animeNameLower.split())))
     return(animeNameClean)
 
+async def setCurrSeason(message):
+    words = message.content.split()
+    if len(words) < 3:
+        errMsg = 'Please enter the form of: "!setSeason animeTitle/animeAlias seasonNum".'
+        await  message.channel.send(errMsg)
+    season = words[-1]
+    try:
+        int(season)
+        isValidSeason = True
+    except:
+        isValidSeason = False
+
+    if isValidSeason:
+        key = "".join(words[1:-1])
+        trueKey = amadeusDriver.getTitleFromKey(key)
+        amadeusDriver.setStack(trueKey, season)
+        succMsg = 'Updated stack of {0} to season {1}'.format(trueKey,season)
+        await  message.channel.send(succMsg)
+    else:
+        errMsg = 'Please ensure "{0}" is a valid number'.format(season)
+        await  message.channel.send(errMsg)
 
 client.run(TokenDistributer.getToken())
