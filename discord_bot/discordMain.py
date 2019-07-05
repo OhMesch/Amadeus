@@ -1,7 +1,10 @@
 import discord
 import validators
 from TokenDistributer import TokenDistributer
-from Amadeus import Amadeus
+import sys
+import os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from amadeus.Amadeus import Amadeus
 
 client = discord.Client()
 amadeusDriver = None
@@ -41,7 +44,7 @@ async def on_message(message):
         await printAlias(message)
 
     elif message.content.startswith('!get+'):
-        await getCurrEpAndIncriment(message)
+        await getCurrEpAndIncrement(message)
 
     elif message.content.startswith('!setEp'):
         await setCurrEp(message)
@@ -52,7 +55,7 @@ async def on_message(message):
     elif message.content.startswith('!home'):
         await getHomeURL(message)
 
-    elif message.content.startswith('!exit'):
+    elif message.content.startswith('!exit') or message.content.startswith('!quit'):
         await client.logout()
 
 async def help(message):
@@ -72,14 +75,14 @@ async def help(message):
     helpMsg += stackMsg
     helpMsg += addStackMsg
     helpMsg += aliasMsg
-    await  message.channel.send(helpMsg)
+    await message.channel.send(helpMsg)
 
 async def addAnimeToStack(message):
     words = message.content.split()
 
     if len(words) < 2:
         errMsg = 'Please enter the form of: "!stack+ www.url-to-anime-home.com" "optional Alias".'
-        await  message.channel.send(errMsg)
+        await message.channel.send(errMsg)
         return
 
     url = words[1]
@@ -91,7 +94,7 @@ async def addAnimeToStack(message):
         amadeusDriver.setSeason(animeNameClean, "1")
     else:
         errMsg = 'Please confirm you have entered a valid url address.'
-        await  message.channel.send(errMsg)
+        await message.channel.send(errMsg)
 
     potentialAlias = " ".join(words[2:])
     if potentialAlias:
@@ -99,37 +102,37 @@ async def addAnimeToStack(message):
 
 async def removeAnimeFromStack(message):
     errMsg = 'Not currently implimented.'
-    await  message.channel.send(errMsg)
+    await message.channel.send(errMsg)
 
 async def printStack(message):
-    stack = amadeusDriver.getStack()
-    await  message.channel.send(stack)
+    stack = amadeusDriver.stack
+    await message.channel.send(stack)
 
 async def printAlias(message):
-    allAlias = amadeusDriver.getAllAlias()
-    await  message.channel.send(allAlias)
+    allAlias = amadeusDriver.alias
+    await message.channel.send(allAlias)
 
 async def addAlias(message):
     words = message.content.split()
     if len(words) < 3:
         errMsg = 'Please enter the form of: "!alias+ anime-stack-name newAlias"\nOr:\n"!alias+ currAlias newAlias".'
-        await  message.channel.send(errMsg)
+        await message.channel.send(errMsg)
         return
     newAlias = "".join(words[2:])
     animeNameClean = cleanAnimeName(words[1])
-    if animeNameClean in amadeusDriver.getStack():
+    if animeNameClean in amadeusDriver.stack:
         amadeusDriver.addAlias(animeNameClean, newAlias)
         succMsg = 'Added "{0}" as an alias for "{1}".'.format(newAlias, animeNameClean)
-        await  message.channel.send(succMsg)
+        await message.channel.send(succMsg)
     else:
         errMsg = 'Please confirm you have entered a valid anime name.'
-        await  message.channel.send(errMsg)
+        await message.channel.send(errMsg)
 
-async def getCurrEpAndIncriment(message):
+async def getCurrEpAndIncrement(message):
     words = message.content.split()
     if len(words) < 2:
         errMsg = 'Please enter the form of: "!get+ animeTitle/animeAlias".'
-        await  message.channel.send(errMsg)
+        await message.channel.send(errMsg)
 
     key = "".join(words[1:])
     print("Entered key:", key)
@@ -145,21 +148,21 @@ async def getCurrEpAndIncriment(message):
             embedEpisode.set_author(name = "Crunchyroll", url = "https://www.crunchyroll.com")
             embedEpisode.set_thumbnail(url = "https://img1.ak.crunchyroll.com/i/spire1/fd7423d5f07a46fcdacb5159517626e51538197757_full.jpg")
             succMsg = 'Please enjoy episode {0} of "{1}".\n'.format(currEpNum,trueKey)
-            await  message.channel.send(succMsg)
-            await  message.channel.send(embed = embedEpisode)
-            amadeusDriver.incrimentStack(trueKey)
+            await message.channel.send(succMsg)
+            await message.channel.send(embed = embedEpisode)
+            amadeusDriver.incrementStack(trueKey)
         else:
             errMsg = 'Could not find episode {0} of "{1}". Please double check it exists.\n{2}'.format(currEpNum,trueKey,amadeusDriver.getUrlFromTitle(trueKey))
-            await  message.channel.send(errMsg)
+            await message.channel.send(errMsg)
     else:
         errMsg = '"{0}" not found in stack or alias list, please confirm the anime and try again.'.format(key)
-        await  message.channel.send(errMsg)
+        await message.channel.send(errMsg)
 
 async def setCurrEp(message):
     words = message.content.split()
     if len(words) < 3:
         errMsg = 'Please enter the form of: "!setEp animeTitle/animeAlias epNum".'
-        await  message.channel.send(errMsg)
+        await message.channel.send(errMsg)
     ep = words[-1]
     try:
         int(ep)
@@ -172,10 +175,10 @@ async def setCurrEp(message):
         trueKey = amadeusDriver.getTitleFromKey(key)
         amadeusDriver.setStack(trueKey, ep)
         succMsg = 'Updated stack of {0} to episode {1}'.format(trueKey,ep)
-        await  message.channel.send(succMsg)
+        await message.channel.send(succMsg)
     else:
         errMsg = 'Please ensure "{0}" is a valid number'.format(ep)
-        await  message.channel.send(errMsg)
+        await message.channel.send(errMsg)
 
 def cleanAnimeName(dirtyName):
     animeNameLower = dirtyName.replace('-',' ').lower()
@@ -186,7 +189,7 @@ async def setCurrSeason(message):
     words = message.content.split()
     if len(words) < 3:
         errMsg = 'Please enter the form of: "!setSeason animeTitle/animeAlias seasonNum".'
-        await  message.channel.send(errMsg)
+        await message.channel.send(errMsg)
     season = words[-1]
     try:
         int(season)
@@ -199,9 +202,9 @@ async def setCurrSeason(message):
         trueKey = amadeusDriver.getTitleFromKey(key)
         amadeusDriver.setStack(trueKey, season)
         succMsg = 'Updated stack of {0} to season {1}'.format(trueKey,season)
-        await  message.channel.send(succMsg)
+        await message.channel.send(succMsg)
     else:
         errMsg = 'Please ensure "{0}" is a valid number'.format(season)
-        await  message.channel.send(errMsg)
+        await message.channel.send(errMsg)
 
 client.run(TokenDistributer.getToken())
