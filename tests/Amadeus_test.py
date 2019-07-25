@@ -1,8 +1,7 @@
 import sys
 import os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import pytest
-
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from amadeus.Amadeus import Amadeus
 from amadeus.CrunchyWebScraper import CrunchyWebScraper
 
@@ -25,7 +24,7 @@ def unique_amadeus(tmpdir):
 class TestAmadeus():
     def test_add_stack_1(self, unique_amadeus): 
         unique_amadeus.addStack("SlimeLongName")
-        assert unique_amadeus.stack["SlimeLongName"] == '1'
+        assert unique_amadeus.stack["SlimeLongName"] == 1
 
     def test_add_stack_2(self, unique_amadeus): 
         with pytest.raises(Exception):
