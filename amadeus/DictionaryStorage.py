@@ -2,9 +2,10 @@ import sys
 import os.path
 import pickle
 
-#todo Add ability for multiple data stores (e.g. john_tom, john_kyle)
+
+# todo Add ability for multiple data stores (e.g. john_tom, john_kyle)
 class DictionaryStorage():
-    def __init__(self, filename, data_dir = None):
+    def __init__(self, filename, data_dir=None):
         self.data = dict()
         if not data_dir:
             data_dir = os.path.abspath(os.path.join(
@@ -40,7 +41,13 @@ class DictionaryStorage():
         self.writeSerial()
 
     def __contains__(self, key):
-        return bool(key in self.data) 
+        return bool(key in self.data)
+
+    def get(self, key, defaultVal=None):
+        return self.data.get(key, defaultVal)
+
+    def keys(self):
+        return self.data.keys()
 
     def loadSerial(self):
         with open(self.data_filepath, "rb") as fileIO:
@@ -49,6 +56,3 @@ class DictionaryStorage():
     def writeSerial(self):
         with open(self.data_filepath, "wb") as fileIO:
             pickle.dump(self.data, fileIO)
-
-    def keys(self):
-        return(self.data.keys())

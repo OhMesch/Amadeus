@@ -61,7 +61,7 @@ class TestDictionaryStorage():
     ])
     def test_writing_reading_keys_int(self, unique_dictionary_storage, key, value):
         unique_dictionary_storage[key] = value
-        assert (key in unique_dictionary_storage)
+        assert key in unique_dictionary_storage
 
     @pytest.mark.parametrize("key, value", [
         ("one", "fishy"),
@@ -70,7 +70,7 @@ class TestDictionaryStorage():
     ])
     def test_writing_reading_keys_string(self, unique_dictionary_storage, key, value):
         unique_dictionary_storage[key] = value
-        assert (key in unique_dictionary_storage)
+        assert key in unique_dictionary_storage
 
     @pytest.mark.parametrize("key, value", [
         ("one", 1),
@@ -79,7 +79,7 @@ class TestDictionaryStorage():
     ])
     def test_writing_reading_values_int(self, unique_dictionary_storage, key, value):
         unique_dictionary_storage[key] = value
-        assert (unique_dictionary_storage[key] == value)
+        assert unique_dictionary_storage[key] == value
 
     @pytest.mark.parametrize("key, value", [
         ("one", "1"),
@@ -88,7 +88,7 @@ class TestDictionaryStorage():
     ])
     def test_writing_reading_values_string(self, unique_dictionary_storage, key, value):
         unique_dictionary_storage[key] = value
-        assert (unique_dictionary_storage[key] == value)
+        assert unique_dictionary_storage[key] == value
 
     @pytest.mark.parametrize("key, value", [
         ("one", [1, 2, 3]),
@@ -97,4 +97,15 @@ class TestDictionaryStorage():
     ])
     def test_writing_reading_values_list(self, unique_dictionary_storage, key, value):
         unique_dictionary_storage[key] = value
-        assert (unique_dictionary_storage[key] == value)
+        assert unique_dictionary_storage[key] == value
+
+    def test_get_valid_keys(self, filled_unique_dictionary_storage):
+        assert filled_unique_dictionary_storage.get(11, 0) == "fishy"
+        assert filled_unique_dictionary_storage.get("dogs", (1, 2, 3)) == 1
+        assert filled_unique_dictionary_storage.get((1, 2)) == [1, 2, 3]
+
+    def test_get_bad_keys(self, filled_unique_dictionary_storage):
+        assert filled_unique_dictionary_storage.get(7, 3) == 3
+        assert filled_unique_dictionary_storage.get("11", "cat") == "cat"
+        assert filled_unique_dictionary_storage.get((1, 6), [1, 5, 7]) == [1, 5, 7]
+        assert filled_unique_dictionary_storage.get(3) is None
