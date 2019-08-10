@@ -1,5 +1,6 @@
 # Requirements without Version Specifiers #
 pytest
+pytest-repeat
 BeautifulSoup4
 discord.py
-validators
+validator-collection
