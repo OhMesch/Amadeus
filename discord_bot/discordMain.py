@@ -1,10 +1,11 @@
 import discord
-import validators
+from validator_collection import validators, checkers
 from TokenDistributer import TokenDistributer
 import sys
 import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from amadeus.Amadeus import Amadeus
+from amadeus.PriorityManager import NumericPriorityManger, TagPriorityManger
 
 client = discord.Client()
 amadeusDriver = None
@@ -18,6 +19,8 @@ async def on_ready():
     amadeusDriver = Amadeus()
     print('------')
 
+#TODO Should we be using **kwargs to simplify optionals as more
+# i.e. !stack+ myanime myanimehome -prio 3 -ep 2 -season 3
 @client.event
 async def on_message(message):
     # we do not want the bot to reply to itself
@@ -52,6 +55,21 @@ async def on_message(message):
     elif message.content.startswith('!setSeason'):
         await setCurrSeason(message)
 
+    elif message.content.startswith('!pop'):
+        await pop(message)
+
+#TODO - Have one input for stack / prio ect, parse, then call the proper functions, dont try to parse here
+    elif message.content.startswith('!prio+'):
+        await setPrio(message)
+
+    elif message.content.startswith('!prio-'):
+        await removePrio(message)
+
+    #TODO
+    elif message.content.startswith('!prio'):
+        await getPrio(message)
+
+    #TODO
     elif message.content.startswith('!home'):
         await getHomeURL(message)
 
@@ -77,6 +95,7 @@ async def help(message):
     helpMsg += aliasMsg
     await message.channel.send(helpMsg)
 
+#TODO we should add anouther scraper for kiss and have more options
 async def addAnimeToStack(message):
     words = message.content.split()
 
@@ -139,6 +158,7 @@ async def getCurrEpAndIncrement(message):
     trueKey = amadeusDriver.getTitleFromKey(key)
     print("True key:", trueKey)
 
+#TODO this can be broken up
     if trueKey:
         currEpNum = amadeusDriver.getCurrEpNumber(trueKey)
         print("Curr Ep:", currEpNum)
@@ -164,13 +184,8 @@ async def setCurrEp(message):
         errMsg = 'Please enter the form of: "!setEp animeTitle/animeAlias epNum".'
         await message.channel.send(errMsg)
     ep = words[-1]
-    try:
-        int(ep)
-        isValidEp = True
-    except:
-        isValidEp = False
 
-    if isValidEp:
+    if checkers.is_integer(ep):
         key = "".join(words[1:-1])
         trueKey = amadeusDriver.getTitleFromKey(key)
         amadeusDriver.setStack(trueKey, ep)
@@ -191,6 +206,7 @@ async def setCurrSeason(message):
         errMsg = 'Please enter the form of: "!setSeason animeTitle/animeAlias seasonNum".'
         await message.channel.send(errMsg)
     season = words[-1]
+    #TODO Replace with validators / checkers
     try:
         int(season)
         isValidSeason = True
@@ -204,7 +220,49 @@ async def setCurrSeason(message):
         succMsg = 'Updated stack of {0} to season {1}'.format(trueKey,season)
         await message.channel.send(succMsg)
     else:
-        errMsg = 'Please ensure "{0}" is a valid number'.format(season)
+        errMsg = 'Please ensure "{0}" is a valid integer'.format(season)
         await message.channel.send(errMsg)
+
+#TODO
+async def pop(message):
+    words = message.content.split()
+    if len(words) > 2:
+        errMsg = 'Please enter the form of: "!pop <optionalTag>".'
+        await message.channel.send(errMsg)
+
+#TODO this smells
+    potentialTag = words[1:]
+    if potentialTag:
+        prioManager = TagPriorityManger()
+        popOrder = prioManager.getTitleSequence(potentialTag)
+    else:
+        prioManager = NumericPriorityManger()
+        popOrder = prioManager.getTitleSequence()
+
+    #TODO DRY
+    for anime in popOrder:
+        currEpNum = amadeusDriver.getCurrEpNumber(anime)
+        currEpLink = amadeusDriver.getEpisodeFromTitle(anime, currEpNum)
+        if currEpLink:
+            embedEpisode = discord.Embed(url=currEpLink, title="Webscrap me from the link trasher",
+                                         description="Oh No! See above!", color=16175669)
+            embedEpisode.set_author(name="Crunchyroll", url="https://www.crunchyroll.com")
+            embedEpisode.set_thumbnail(
+                url="https://img1.ak.crunchyroll.com/i/spire1/fd7423d5f07a46fcdacb5159517626e51538197757_full.jpg")
+            succMsg = 'Please enjoy episode {0} of "{1}".\n'.format(currEpNum, anime)
+            await message.channel.send(succMsg)
+            await message.channel.send(embed=embedEpisode)
+            amadeusDriver.incrementStack(anime)
+            break
+    errMsg = '"Currently caught up on this stack. Weeb.'
+    await message.channel.send(errMsg)
+
+#TODO
+async def setPrio(message):
+    pass
+
+#TODO
+async def removePrio(message):
+    pass
 
 client.run(TokenDistributer.getToken())
