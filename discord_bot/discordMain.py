@@ -316,7 +316,7 @@ async def setPrio(message, args):
         await message.channel.send(errMsg)
         return
     
-    animeTitle = amadeusDriver.getUrlFromTitle("".join(words[1:-1]))
+    animeTitle = amadeusDriver.getTitleFromKey("".join(words[1:-1]))
     #TODO getter?
     if animeTitle in amadeusDriver.stack:
         amadeusDriver.setPrio(animeTitle, words[-1])
@@ -333,7 +333,7 @@ async def removePrio(message, args):
         await message.channel.send(errMsg)
         return
     
-    animeTitle = amadeusDriver.getUrlFromTitle(words[1:-1])
+    animeTitle = amadeusDriver.getTitleFromKey(words[1:-1])
     if animeTitle in amadeusDriver.stack:
         amadeusDriver.removePrio(animeTitle, words[-1])
     else:
