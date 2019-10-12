@@ -54,7 +54,7 @@ class NumericPriorityManger(PriorityManger):
 
     # TODO Would a list comprehension / mapping be better here?
     def getTitleSequence(self):
-        sortedPrioKeys = sorted(map(int, (list(self.prio.keys())), reversed=True))
+        sortedPrioKeys = sorted(map(int, (list(self.prio.keys()))), reverse=True)
         weightMixedTitles = []
         for prioKey in sortedPrioKeys:
             currPrio = self.prio[str(prioKey)]
