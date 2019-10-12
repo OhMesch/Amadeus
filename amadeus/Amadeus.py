@@ -24,12 +24,13 @@ class Amadeus():
             url_data, stack_data, alias_data, season_data, num_prio_data, tag_prio_data)
 
     def addAlias(self, existing_ey, new_key):
-        if existing_ey in self.alias:
-            self.alias[new_key] = self.alias[existing_ey]
+        if existing_ey.lower() in self.alias:
+            self.alias[new_key] = self.alias[existing_ey.lower()]
+            return existing_ey.lower()
         elif existing_ey in self.stack:
             self.alias[new_key] = existing_ey
-        else:
-            raise Exception("Alias must correspond to a show on the stack or an previously aliased name.")
+            return existing_ey
+        return None
 
     def removeAlias(self, alias):
         del self.alias[alias]
