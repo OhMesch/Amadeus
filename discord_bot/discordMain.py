@@ -36,39 +36,39 @@ async def on_message(message):
     if message.author == client.user:
         return
     try:
+        if not message.content.startswith("!"):
+            return
         args = message.content.split()
         first_arg = args[0]
-        if not first_arg.startswith("!"):
-            return
 
-        if first_arg == 'help':
+        if first_arg == '!help':
             await help(message, args)
             return
-        elif first_arg.startswith('stack'):
+        elif first_arg.startswith('!stack'):
             await parseStackMessage(message, args)
             return
-        elif first_arg.startswith('alias'):
+        elif first_arg.startswith('!alias'):
             await parseAlias(message, args)
             return
-        elif first_arg.startswith('prio'):
+        elif first_arg.startswith('!prio'):
             await parsePrio(message, args)
             return
-        elif first_arg == 'setEp':
+        elif first_arg == '!setEp':
             await setCurrEp(message, args)
             return
-        elif first_arg == 'setSeason':
+        elif first_arg == '!setSeason':
             await setCurrSeason(message, args)
             return
-        elif first_arg == 'watch':
+        elif first_arg == '!watch':
             await getCurrEpAndIncrement(message, args)
             return
-        elif first_arg == 'pop':
+        elif first_arg == '!pop':
             await pop(message, args)
             return
-        elif first_arg == 'home':
+        elif first_arg == '!home':
             await getHomeURL(message, args)
             return
-        elif first_arg == 'exit' or first_arg == 'quit':
+        elif first_arg == '!exit' or first_arg == '!quit':
             await client.logout()
         await diagnoseMessage(message)
     except concurrent.futures._base.CancelledError as e:
@@ -124,15 +124,12 @@ async def parseStackMessage(message, args):
 
 #TODO we should add anouther scraper for kiss and have more options
 async def addAnimeToStack(message, args):
-    words = message.content.split()
-
-    if len(words) < 2:
+    if len(args) != 2 and len(args) != 3:
         errMsg = 'Please enter the form of: "!stack+ www.url-to-anime-home.com" "optional Alias".'
         await message.channel.send(errMsg)
         return
 
-    url = words[1]
-
+    url = args[1]
     if validators.url(url):
         animeNameClean = cleanAnimeName(url.split("/")[-1])
         amadeusDriver.addUrl(animeNameClean, url)
@@ -142,7 +139,7 @@ async def addAnimeToStack(message, args):
         errMsg = 'Please confirm you have entered a valid url address.'
         await message.channel.send(errMsg)
 
-    potentialAlias = " ".join(words[2:])
+    potentialAlias = " ".join(args[2:])
     if potentialAlias:
         amadeusDriver.addAlias(animeNameClean, potentialAlias)
 
@@ -165,13 +162,12 @@ async def printAlias(message, args):
     await message.channel.send(allAlias)
 
 async def addAlias(message, args):
-    words = message.content.split()
-    if len(words) != 3:
+    if len(args) != 3:
         errMsg = 'Please enter the form of: "!alias+ anime-stack-name newAlias"\nOr:\n"!alias+ currAlias newAlias".'
         await message.channel.send(errMsg)
         return
-    newAlias = "".join(words[2:])
-    animeNameClean = cleanAnimeName(words[1])
+    newAlias = "".join(args[2:])
+    animeNameClean = cleanAnimeName(args[1])
 
     aliasOrTitle = amadeusDriver.addAlias(animeNameClean, newAlias)
     if aliasOrTitle:
@@ -190,13 +186,12 @@ async def returnEpToUser(message, animeEpisodeName, currEpLink, currEpNum, currS
     await message.channel.send(embed = embedEpisode)
 
 async def getCurrEpAndIncrement(message, args):
-    words = message.content.split()
-    if len(words) < 2:
+    if len(args) != 2:
         errMsg = 'Please enter the form of: "!get+ animeTitle/animeAlias".'
         await message.channel.send(errMsg)
         return
 
-    key = "".join(words[1:])
+    key = "".join(args[1:])
     print("Entered key:", key)
     animeEpisodeName = amadeusDriver.getTitleFromKey(key)
     print("True key:", animeEpisodeName)
@@ -235,14 +230,14 @@ async def getCurrEpAndIncrement(message, args):
         await message.channel.send(errMsg)
 
 async def setCurrEp(message, args):
-    words = message.content.split()
-    if len(words) < 3:
+    args = message.content.split()
+    if len(args) != 3:
         errMsg = 'Please enter the form of: "!setEp animeTitle/animeAlias epNum".'
         await message.channel.send(errMsg)
-    ep = words[-1]
+    ep = args[-1]
 
     if checkers.is_integer(ep):
-        key = "".join(words[1:-1])
+        key = "".join(args[1:-1])
         trueKey = amadeusDriver.getTitleFromKey(key)
         amadeusDriver.setStack(trueKey, ep)
         succMsg = 'Updated stack of {0} to episode {1}'.format(trueKey,ep)
@@ -257,11 +252,10 @@ def cleanAnimeName(dirtyName):
     return animeNameClean
 
 async def setCurrSeason(message, args):
-    words = message.content.split()
-    if len(words) < 3:
+    if len(args) != 3:
         errMsg = 'Please enter the form of: "!setSeason animeTitle/animeAlias seasonNum".'
         await message.channel.send(errMsg)
-    season = words[-1]
+    season = args[-1]
     #TODO Replace with validators / checkers
     try:
         int(season)
@@ -270,7 +264,7 @@ async def setCurrSeason(message, args):
         isValidSeason = False
 
     if isValidSeason:
-        key = "".join(words[1:-1])
+        key = "".join(args[1:-1])
         trueKey = amadeusDriver.getTitleFromKey(key)
         amadeusDriver.setStack(trueKey, season)
         succMsg = 'Updated stack of {0} to season {1}'.format(trueKey,season)
@@ -280,12 +274,11 @@ async def setCurrSeason(message, args):
         await message.channel.send(errMsg)
 
 async def pop(message, args):
-    words = message.content.split()
-    if len(words) > 2:
+    if len(args) > 2:
         errMsg = 'Please enter the form of: "!pop <optionalTag>".'
         await message.channel.send(errMsg)
         
-    potentialTag = "".join(words[1:])
+    potentialTag = "".join(args[1:])
     ep, currEpNum, anime = amadeusDriver.pop(potentialTag)
     
     if ep: 
@@ -301,25 +294,24 @@ async def pop(message, args):
 
 async def parsePrio(message, args):
     if message.content.startswith('!prio+'):
-        await setPrio(message)
+        await setPrio(message, args)
         return
     elif message.content.startswith('!prio-'):
-        await removePrio(message)
+        await removePrio(message, args)
         return
-    await getPrio(message)
+    await getPrio(message, args)
 
 #TODO -> multi word tags? Is this even supported
 async def setPrio(message, args):
-    words = message.content.split()
-    if len(words) < 2:
+    if len(args) < 2:
         errMsg = 'Please enter the form of: "!prio+ animeTitle/animeAlias numericValue/Tag".'
         await message.channel.send(errMsg)
         return
     
-    animeTitle = amadeusDriver.getTitleFromKey("".join(words[1:-1]))
+    animeTitle = amadeusDriver.getTitleFromKey("".join(args[1:-1]))
     #TODO getter?
     if animeTitle in amadeusDriver.stack:
-        amadeusDriver.setPrio(animeTitle, words[-1])
+        amadeusDriver.setPrio(animeTitle, args[-1])
     else:
         errMsg = 'Please confirm you have entered a valid anime name or alias.'
         await message.channel.send(errMsg)
@@ -327,15 +319,14 @@ async def setPrio(message, args):
 
 #TODO -> multi word tags? Is this even supported
 async def removePrio(message, args):
-    words = message.content.split()
-    if len(words) < 2:
+    if len(args) < 2:
         errMsg = 'Please enter the form of: "!prio- animeTitle/animeAlias numericValue/Tag".'
         await message.channel.send(errMsg)
         return
     
-    animeTitle = amadeusDriver.getTitleFromKey(words[1:-1])
+    animeTitle = amadeusDriver.getTitleFromKey(args[1:-1])
     if animeTitle in amadeusDriver.stack:
-        amadeusDriver.removePrio(animeTitle, words[-1])
+        amadeusDriver.removePrio(animeTitle, args[-1])
     else:
         errMsg = 'Please confirm you have entered a valid anime name or alias.'
         await message.channel.send(errMsg)
@@ -349,8 +340,8 @@ async def getPrio(message, args):
 
 #TODO - No idea if works for titles with spaces
 async def getHomeURL(message, args):
-    words = message.content.split()
-    if len(words) < 2:
+    args = message.content.split()
+    if len(args) < 2:
         errMsg = 'Please enter the form of: "!home animeTitle/animeAlias".'
         await message.channel.send(errMsg)
         return
