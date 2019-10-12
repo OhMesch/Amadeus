@@ -162,15 +162,16 @@ async def printAlias(message):
 
 async def addAlias(message):
     words = message.content.split()
-    if len(words) < 3:
+    if len(words) != 3:
         errMsg = 'Please enter the form of: "!alias+ anime-stack-name newAlias"\nOr:\n"!alias+ currAlias newAlias".'
         await message.channel.send(errMsg)
         return
     newAlias = "".join(words[2:])
     animeNameClean = cleanAnimeName(words[1])
-    if animeNameClean in amadeusDriver.stack:
-        amadeusDriver.addAlias(animeNameClean, newAlias)
-        succMsg = 'Added "{0}" as an alias for "{1}".'.format(newAlias, animeNameClean)
+
+    aliasOrTitle = amadeusDriver.addAlias(animeNameClean, newAlias)
+    if aliasOrTitle:
+        succMsg = 'Added "{0}" as an alias for "{1}".'.format(newAlias, aliasOrTitle)
         await message.channel.send(succMsg)
     else:
         errMsg = 'Please confirm you have entered a valid anime name.'
@@ -249,7 +250,7 @@ async def setCurrEp(message):
 def cleanAnimeName(dirtyName):
     animeNameLower = dirtyName.replace('-',' ').lower()
     animeNameClean = " ".join(list(map(lambda x: x.capitalize(), animeNameLower.split())))
-    return(animeNameClean)
+    return animeNameClean
 
 async def setCurrSeason(message):
     words = message.content.split()
