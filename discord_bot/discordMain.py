@@ -68,13 +68,11 @@ async def on_message(message):
     except concurrent.futures._base.CancelledError as e:
         return
     except Exception as e:
-        # traceback.print_exc()
-        stacktrace = traceback.extract_stack()
-        stacktrace_string = ''.join(stacktrace.format())
-        print(stacktrace_string)
+        stacktrace = traceback.format_exc()
+        print(stacktrace)
         channel = client.get_channel(632649941986050048)
         await channel.send("Exception occured when {0} said: \"{1}\". Stack trace:".format(message.author, message.content))
-        await channel.send(stacktrace_string)
+        await channel.send(stacktrace)
 
 async def diagnoseMessage(message):
     stripped_message = message.content.replace("!", "")
