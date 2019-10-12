@@ -4,3 +4,4 @@ pytest-repeat
 BeautifulSoup4
 discord.py
 validator-collection
+requests

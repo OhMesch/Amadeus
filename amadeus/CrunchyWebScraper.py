@@ -52,7 +52,7 @@ class CrunchyWebScraper():
         self.cleanRequests()
         self.requests_log[self.now_seconds] += num_requests
 
-    def getEpisodeLink(url, requested_ep, season = "1"):
+    def getEpisodeLink(self, url, requested_ep, season = "1"):
         eps_across_seasons = []
         all_eplinks = self.scrapeUrlForEpisodeLinks(url)
         for ep_link in all_eplinks:
@@ -62,7 +62,7 @@ class CrunchyWebScraper():
         if eps_across_seasons:
             return eps_across_seasons[::-1][int(season)-1]
     
-    def scrapeUrlForEpisodeLinks(url):
+    def scrapeUrlForEpisodeLinks(self, url):
         try:
             html_soup = self.getHTMLFromURL(url)
         except requests.exceptions.RequestException as err:
@@ -71,14 +71,14 @@ class CrunchyWebScraper():
             titleString = url.split("/")[-1]
             return self.getEpisodeLinksFromHTML(html_soup, titleString)
 
-    def getHTMLFromURL(url):
+    def getHTMLFromURL(self, url):
         self.throttleRequests(1)
         code = requests.get(url)
         html_plain_text = code.text
         html_soup = BeautifulSoup(html_plain_text, "html.parser")
         return html_soup
 
-    def getEpisodeLinksFromHTML(html, title):
+    def getEpisodeLinksFromHTML(self, html, title):
         base_url = "https://www.crunchyroll.com"
         episode_links = []
         for link in html.find_all(href=re.compile(title + "/episode")): 

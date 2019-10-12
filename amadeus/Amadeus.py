@@ -1,5 +1,7 @@
 from amadeus.DictionaryStorage import DictionaryStorage
 from amadeus.CrunchyWebScraper import CrunchyWebScraper
+from amadeus.PriorityManager import NumericPriorityManger, TagPriorityManger
+from validator_collection import validators, checkers
 
 class Amadeus():
     def __init__(self, data_dir = None):
@@ -7,6 +9,8 @@ class Amadeus():
         self.stack = DictionaryStorage("stack", data_dir)
         self.alias = DictionaryStorage("alias", data_dir)
         self.season = DictionaryStorage("season", data_dir)
+        self.numPrioManager = NumericPriorityManger(data_dir)
+        self.tagPrioManager = TagPriorityManger(data_dir)
         self.crunchy_scraper = CrunchyWebScraper()
 
     def __str__(self): # could probably return each of these better
@@ -40,8 +44,10 @@ class Amadeus():
         del self.stack[show]
 
     def getEpisodeFromTitle(self, trueTitle, episode):
-        return self.crunchy_scraper.getEpisodeLink(self.getUrlFromTitle(trueTitle), 
-            episode, self.season[trueTitle])
+        return self.crunchy_scraper.getEpisodeLink(self.getUrlFromTitle(trueTitle), episode, self.season[trueTitle])
+    
+    def getSeasonEpisodeFromTitle(self, trueTitle, episode, season):
+        return self.crunchy_scraper.getEpisodeLink(self.getUrlFromTitle(trueTitle), episode, season)
 
     def getUrlFromTitle(self, trueTitle):
         return self.url[trueTitle]
@@ -54,12 +60,46 @@ class Amadeus():
             return key
         if key in self.alias:
             return self.alias[key]
+        return None
 
     def getCurrEpNumber(self, anime):
         return self.stack[anime]
+
+    def getCurrSeasonNumber(self, anime):
+        return self.season[anime]
 
     def incrementStack(self, anime):
         self.stack[anime] = str(int(self.stack[anime]) + 1) # should just store as number??
 
     def setSeason(self, anime, season):
         self.season[anime] = season
+
+    def pop(self, tag=None):
+        if tag:
+            popOrder = self.numPrioManager.getTitleSequence()
+        else:
+            popOrder = self.tagPrioManager.getTitleSequence(tag)
+
+        #TODO DRY -> Can we reuse getEpAndIncriment? Might have a hard time if there is nothing there.
+        print(popOrder)
+        for anime in popOrder:
+            currEpNum = self.getCurrEpNumber(anime)
+            currEpLink = self.getEpisodeFromTitle(anime, currEpNum)
+            if currEpLink:
+                self.incrementStack(anime)
+                return (currEpLink,currEpNum,anime)
+        return None
+
+    def setPrio(self, anime, key):
+        if checkers.is_integer(key):
+            prioManager = self.numPrioManager
+        else:
+            prioManager = self.tagPrioManager
+        prioManager.addPrio(anime, key)
+
+    def removePrio(self, anime, key):
+        if checkers.is_integer(key):
+            prioManager = self.numPrioManager
+        else:
+            prioManager = self.tagPrioManager
+        prioManager.removePrio(anime, key)
