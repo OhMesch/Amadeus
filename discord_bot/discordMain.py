@@ -8,6 +8,8 @@ from difflib import SequenceMatcher
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from amadeus.Amadeus import Amadeus
 import traceback
+import concurrent
+import discord.utils
 
 
 client = discord.Client()
@@ -63,12 +65,16 @@ async def on_message(message):
             return
         elif message.content.startswith('!exit') or message.content.startswith('!quit'):
             await client.logout()
-            return
         elif message.content.startswith('!'):
             await diagnoseMessage(message)
+    except concurrent.futures._base.CancelledError as e:
+        return
     except Exception as e:
-        traceback.print_exc()
-        await message.channel.send("An exception occured")
+        stacktrace = traceback.format_exc()
+        print(stacktrace)
+        channel = client.get_channel(632649941986050048)
+        await channel.send("Exception occured when {0} said: \"{1}\". Stack trace:".format(message.author, message.content))
+        await channel.send(stacktrace)
 
 async def diagnoseMessage(message):
     stripped_message = message.content.replace("!", "")
