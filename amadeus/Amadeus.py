@@ -18,8 +18,10 @@ class Amadeus():
         stack_data = str(self.stack)
         alias_data = str(self.alias)
         season_data = str(self.season)
-        return "URL Data:\n{0}\nStack Data:\n{1}\nAlias Data:\n{2}\nSeason Data:\n{3}\n".format(
-            url_data, stack_data, alias_data, season_data)
+        num_prio_data = str(self.numPrioManager)
+        tag_prio_data = str(self.tagPrioManager)
+        return "URL Data:\n{0}\nStack Data:\n{1}\nAlias Data:\n{2}\nSeason Data:\n{3}\nNumeric Priority Manager:\n{4}\nTag Priority Manager:\n{5}\n".format(
+            url_data, stack_data, alias_data, season_data, num_prio_data, tag_prio_data)
 
     def addAlias(self, existing_ey, new_key):
         if existing_ey in self.alias:
@@ -69,16 +71,17 @@ class Amadeus():
         return self.season[anime]
 
     def incrementStack(self, anime):
-        self.stack[anime] = str(int(self.stack[anime]) + 1) # should just store as number??
+        self.stack[anime] = str(int(self.stack[anime]) + 1) #TODO should just store as number??
 
     def setSeason(self, anime, season):
         self.season[anime] = season
 
-    def pop(self, tag=None):
-        if tag:
-            popOrder = self.numPrioManager.getTitleSequence()
-        else:
+    #TODO this can be clearer
+    def pop(self, tag=''):
+        if checkers.is_string(tag, minimum_length=1):
             popOrder = self.tagPrioManager.getTitleSequence(tag)
+        else:
+            popOrder = self.numPrioManager.getTitleSequence()
 
         #TODO DRY -> Can we reuse getEpAndIncriment? Might have a hard time if there is nothing there.
         print(popOrder)

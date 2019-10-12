@@ -26,6 +26,8 @@ async def on_ready():
 #TODO add rename tag function
 #TODO Should we be using **kwargs to simplify optionals as more
 # i.e. !stack+ myanime myanimehome -prio 3 -ep 2 -season 3
+#TODO We have a lot of repeat code for scrubbing anime names and makingsure they blong to the stack. DRY
+#Resource files for strings
 @client.event
 async def on_message(message):
     # we do not want the bot to reply to itself
@@ -277,11 +279,9 @@ async def pop(message):
     ep, currEpNum, anime = amadeusDriver.pop(potentialTag)
     
     if ep: 
-        embedEpisode = discord.Embed(url=ep, title="Webscrap me from the link trasher",
-                                                description="Oh No! See above!", color=16175669)
+        embedEpisode = discord.Embed(url=ep, title="Webscrap me from the link trasher", description="Oh No! See above!", color=16175669)
         embedEpisode.set_author(name="Crunchyroll", url="https://www.crunchyroll.com")
-        embedEpisode.set_thumbnail(
-            url="https://img1.ak.crunchyroll.com/i/spire1/fd7423d5f07a46fcdacb5159517626e51538197757_full.jpg")
+        embedEpisode.set_thumbnail(url="https://img1.ak.crunchyroll.com/i/spire1/fd7423d5f07a46fcdacb5159517626e51538197757_full.jpg")
         succMsg = 'Please enjoy episode {0} of "{1}".\n'.format(currEpNum, anime)
         await message.channel.send(succMsg)
         await message.channel.send(embed=embedEpisode)
@@ -306,8 +306,14 @@ async def setPrio(message):
         await message.channel.send(errMsg)
         return
     
-    anime = "".join(words[1:-1])
-    amadeusDriver.setPrio(anime, words[-1])
+    animeTitle = amadeusDriver.getUrlFromTitle("".join(words[1:-1]))
+    #TODO getter?
+    if animeTitle in amadeusDriver.stack:
+        amadeusDriver.setPrio(animeTitle, words[-1])
+    else:
+        errMsg = 'Please confirm you have entered a valid anime name or alias.'
+        await message.channel.send(errMsg)
+        return
 
 #TODO -> multi word tags? Is this even supported
 async def removePrio(message):
@@ -317,13 +323,19 @@ async def removePrio(message):
         await message.channel.send(errMsg)
         return
     
-    anime = words[1:-1]
-    amadeusDriver.removePrio(anime, words[-1])
+    animeTitle = amadeusDriver.getUrlFromTitle(words[1:-1])
+    if animeTitle in amadeusDriver.stack:
+        amadeusDriver.removePrio(animeTitle, words[-1])
+    else:
+        errMsg = 'Please confirm you have entered a valid anime name or alias.'
+        await message.channel.send(errMsg)
+        return
 
 #TODO
 async def getPrio(message):
+    await message.channel.send("Numerical Priority List:")
     await message.channel.send(amadeusDriver.numPrioManager)
-    await message.channel.send("\na")
+    await message.channel.send("\n\nTagged Priority List:")
     await message.channel.send(amadeusDriver.tagPrioManager)
 
 #TODO - No idea if works for titles with spaces
@@ -334,13 +346,12 @@ async def getHomeURL(message):
         await message.channel.send(errMsg)
         return
 
-    homepage = amadeusDriver.getUrlFromTitle("".join(message[1:]))
-    embedHome = discord.Embed(url=homepage, title="Webscrap me from the link trasher",
-                                                description="Oh No! See above!", color=16175669)
-    embedHome.set_author(name="Crunchyroll", url="https://www.crunchyroll.com")
-    embedHome.set_thumbnail(
-        url="https://img1.ak.crunchyroll.com/i/spire1/fd7423d5f07a46fcdacb5159517626e51538197757_full.jpg")
-    await message.channel.send(embed=embedHome)
+    animeTitle = amadeusDriver.getTitleFromKey("".join(message[1:]))
+    homepage = amadeusDriver.getUrlFromTitle(animeTitle)
 
+    embedHome = discord.Embed(url=homepage, title="Webscrap me from the link trasher", description="Oh No! See above!", color=16175669)
+    embedHome.set_author(name="Crunchyroll", url="https://www.crunchyroll.com")
+    embedHome.set_thumbnail(url="https://img1.ak.crunchyroll.com/i/spire1/fd7423d5f07a46fcdacb5159517626e51538197757_full.jpg")
+    await message.channel.send(embed=embedHome)
 
 client.run(TokenDistributer.getToken())
