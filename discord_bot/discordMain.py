@@ -53,7 +53,6 @@ async def on_message(message):
             await getCurrEpAndIncrement(message)
             return
         elif message.content.startswith('!pop'):
-            sadaoiknmads
             await pop(message)
             return
         elif message.content.startswith('!prio'):
