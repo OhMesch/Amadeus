@@ -57,13 +57,11 @@ class TestAmadeus():
         assert unique_amadeus.alias["AnotherSlimeAlias"] == "SlimeLongName"
 
     def test_add_alias_3(self, unique_amadeus): 
-        with pytest.raises(Exception):
-            unique_amadeus.addAlias("SlimeLongName", "Slime")
+        assert None == unique_amadeus.addAlias("SlimeLongName", "Slime")
 
     def test_add_alias_4(self, unique_amadeus): 
-        with pytest.raises(Exception):
-            unique_amadeus.addAlias("SlimeLongName", "Slime")
-            unique_amadeus.addAlias("SlimeLongName", "Slime")
+        unique_amadeus.addAlias("SlimeLongName", "Slime")
+        assert None == unique_amadeus.addAlias("SlimeLongName", "Slime")
 
     def test_remove_alias_1(self, unique_amadeus):
         unique_amadeus.addStack("SlimeLongName")
