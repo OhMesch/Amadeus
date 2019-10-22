@@ -1,10 +1,10 @@
 ﻿import random
 from amadeus.DictionaryStorage import DictionaryStorage
 
-
 class PriorityManger():
-    def __init__(self, filename, data_dir=None):
+    def __init__(self, filename, data_dir):
         self.prio = DictionaryStorage(filename, data_dir)
+        self.order_of_equal_list_provider = lambda list_in: random.sample(list_in, len(list_in))
 
     def __str__(self):
         string = ""
@@ -28,16 +28,16 @@ class PriorityManger():
 
 
 class TagPriorityManger(PriorityManger):
-    def __init__(self, data_dir=None):
+    def __init__(self, data_dir):
         super().__init__("priotag", data_dir)
 
-    def getTitleSequence(self, tag):
-        titles = self.prio.get(tag, [])
-        return random.sample(titles, len(titles))
+    def getAnimeSequence(self, tag):
+        animes = self.prio.get(tag, [])
+        return self.order_of_equal_list_provider(animes)
 
 
 class NumericPriorityManger(PriorityManger):
-    def __init__(self, data_dir=None):
+    def __init__(self, data_dir):
         super().__init__("prionumeric", data_dir)
         self.lookup = DictionaryStorage("reverseprionumeric", data_dir)
 
@@ -53,10 +53,10 @@ class NumericPriorityManger(PriorityManger):
             del self.lookup[prioTargetName]
 
     # TODO Would a list comprehension / mapping be better here?
-    def getTitleSequence(self):
-        sortedPrioKeys = sorted(map(int, (list(self.prio.keys()))), reverse=True)
-        weightMixedTitles = []
-        for prioKey in sortedPrioKeys:
-            currPrio = self.prio[str(prioKey)]
-            weightMixedTitles.extend(random.sample(currPrio, len(currPrio)))
-        return weightMixedTitles
+    def getAnimeSequence(self):
+        sorted_prio_keys = sorted(map(int, (list(self.prio.keys()))))
+        anime_order = []
+        for key in sorted_prio_keys:
+            animes = self.prio[key]
+            anime_order.extend(self.order_of_equal_list_provider(animes))
+        return anime_order

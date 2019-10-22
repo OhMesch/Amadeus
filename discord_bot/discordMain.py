@@ -100,15 +100,15 @@ async def help(message, args):
     stackMsg = '\nTo get started, take a look at the stack with "!stack"'
     stackMsg += '\nThe stack shows all the currently watched anime and the next episode to watch.'
 
-    addStackMsg = "\nTo add an anime to the stack, you will need the CrunchyRoll page corresponding to the anime you want to add."
-    addStackMsg += "\nOnce you have your anime url, add it to the stack in the form of: \"!stack+ www.url-to-anime-home.com\"."
-    addStackMsg += "\nAlternatively, if you would like to set an alias while adding the anime, use the syntax: \"!stack+ www.url-to-anime-home.com customAlias\".\n"
+    addAnimeMsg = "\nTo add an anime to the stack, you will need the CrunchyRoll page corresponding to the anime you want to add."
+    addAnimeMsg += "\nOnce you have your anime url, add it to the stack in the form of: \"!stack+ www.url-to-anime-home.com\"."
+    addAnimeMsg += "\nAlternatively, if you would like to set an alias while adding the anime, use the syntax: \"!stack+ www.url-to-anime-home.com customAlias\".\n"
 
     aliasMsg = "\nAliases are anouther way to refer to, and interact with, an anime on the stack. Alias provide an alternative to using the full stack name for an anime."
     aliasMsg += "\nAn alias can be added to an existing stack entry with either:\n{0}\n{1}".format("!alias+ anime-stack-name newAlias","!alias+ currAlias newAlias")
 
     helpMsg += stackMsg
-    helpMsg += addStackMsg
+    helpMsg += addAnimeMsg
     helpMsg += aliasMsg
     await message.channel.send(helpMsg)
 
@@ -133,7 +133,7 @@ async def addAnimeToStack(message, args):
     if validators.url(url):
         animeNameClean = cleanAnimeName(url.split("/")[-1])
         amadeusDriver.addUrl(animeNameClean, url)
-        amadeusDriver.addStack(animeNameClean)
+        amadeusDriver.addAnime(animeNameClean)
         amadeusDriver.setSeason(animeNameClean, "1")
     else:
         errMsg = 'Please confirm you have entered a valid url address.'
@@ -144,7 +144,7 @@ async def addAnimeToStack(message, args):
         amadeusDriver.addAlias(animeNameClean, potentialAlias)
 
 async def removeAnimeFromStack(message, args):
-    errMsg = 'Not currently implimented.'
+    errMsg = 'Not currently implemented.'
     await message.channel.send(errMsg)
 
 async def printStack(message, args):
@@ -212,14 +212,14 @@ async def getCurrEpAndIncrement(message, args):
         currEpLink = amadeusDriver.getSeasonEpisodeFromTitle(animeEpisodeName, 0, currSeasonNum + 1)
         if currEpLink:
             await returnEpToUser(message, animeEpisodeName, currEpLink, currEpNum, currSeasonNum)
-            amadeusDriver.setStack(animeEpisodeName, 0)
+            amadeusDriver.setEp(animeEpisodeName, 0)
             amadeusDriver.setSeason(animeEpisodeName, currSeasonNum + 1)
             return
 
         currEpLink = amadeusDriver.getSeasonEpisodeFromTitle(animeEpisodeName, 1, currSeasonNum + 1)
         if currEpLink:
             await returnEpToUser(message, animeEpisodeName, currEpLink, currEpNum, currSeasonNum)
-            amadeusDriver.setStack(animeEpisodeName, 1)
+            amadeusDriver.setEp(animeEpisodeName, 1)
             amadeusDriver.setSeason(animeEpisodeName, currSeasonNum + 1)
             return
 
@@ -239,7 +239,7 @@ async def setCurrEp(message, args):
     if checkers.is_integer(ep):
         key = "".join(args[1:-1])
         trueKey = amadeusDriver.getTitleFromKey(key)
-        amadeusDriver.setStack(trueKey, ep)
+        amadeusDriver.setEp(trueKey, ep)
         succMsg = 'Updated stack of {0} to episode {1}'.format(trueKey,ep)
         await message.channel.send(succMsg)
     else:
@@ -266,7 +266,7 @@ async def setCurrSeason(message, args):
     if isValidSeason:
         key = "".join(args[1:-1])
         trueKey = amadeusDriver.getTitleFromKey(key)
-        amadeusDriver.setStack(trueKey, season)
+        amadeusDriver.setEp(trueKey, season)
         succMsg = 'Updated stack of {0} to season {1}'.format(trueKey,season)
         await message.channel.send(succMsg)
     else:

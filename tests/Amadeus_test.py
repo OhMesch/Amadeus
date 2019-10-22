@@ -23,38 +23,38 @@ def unique_amadeus(tmpdir):
 
 class TestAmadeus():
     def test_add_stack_1(self, unique_amadeus): 
-        unique_amadeus.addStack("SlimeLongName")
-        assert unique_amadeus.stack["SlimeLongName"] == 1
+        unique_amadeus.addAnime("SlimeLongName")
+        assert unique_amadeus.anime_ep["SlimeLongName"] == 1
 
     def test_add_stack_2(self, unique_amadeus): 
         with pytest.raises(Exception):
-            unique_amadeus.addStack("SlimeLongName")
-            unique_amadeus.addStack("SlimeLongName")
+            unique_amadeus.addAnime("SlimeLongName")
+            unique_amadeus.addAnime("SlimeLongName")
 
     def test_remove_stack_1(self, unique_amadeus): 
-        unique_amadeus.addStack("DearPhillip")
-        unique_amadeus.removeStack("DearPhillip")
-        assert "DearPhillip" not in unique_amadeus.stack
+        unique_amadeus.addAnime("DearPhillip")
+        unique_amadeus.removeAnime("DearPhillip")
+        assert "DearPhillip" not in unique_amadeus.anime_ep
 
     def test_remove_stack_2(self, unique_amadeus): 
         with pytest.raises(KeyError):
-            unique_amadeus.removeStack("DearPhillip")
+            unique_amadeus.removeAnime("DearPhillip")
 
     @pytest.mark.parametrize("actual, alias", [
         ("123", "456"),
         ("SlimeLongName", "Slime")
     ])
     def test_add_alias_1(self, unique_amadeus, actual, alias):
-        unique_amadeus.addStack(actual)
+        unique_amadeus.addAnime(actual)
         unique_amadeus.addAlias(actual, alias)
-        assert unique_amadeus.alias[alias] == actual
+        assert unique_amadeus.anime_alias[alias] == actual
 
     def test_add_alias_2(self, unique_amadeus):
-        unique_amadeus.addStack("SlimeLongName")
+        unique_amadeus.addAnime("SlimeLongName")
         unique_amadeus.addAlias("SlimeLongName", "Slime")
         unique_amadeus.addAlias("SlimeLongName", "AnotherSlimeAlias")
-        assert unique_amadeus.alias["Slime"] == "SlimeLongName"
-        assert unique_amadeus.alias["AnotherSlimeAlias"] == "SlimeLongName"
+        assert unique_amadeus.anime_alias["Slime"] == "SlimeLongName"
+        assert unique_amadeus.anime_alias["AnotherSlimeAlias"] == "SlimeLongName"
 
     def test_add_alias_3(self, unique_amadeus): 
         assert None == unique_amadeus.addAlias("SlimeLongName", "Slime")
@@ -64,10 +64,10 @@ class TestAmadeus():
         assert None == unique_amadeus.addAlias("SlimeLongName", "Slime")
 
     def test_remove_alias_1(self, unique_amadeus):
-        unique_amadeus.addStack("SlimeLongName")
+        unique_amadeus.addAnime("SlimeLongName")
         unique_amadeus.addAlias("SlimeLongName", "BigSlime")
         unique_amadeus.removeAlias("BigSlime")
-        assert "BigSlime" not in unique_amadeus.alias
+        assert "BigSlime" not in unique_amadeus.anime_alias
 
     def test_remove_alias_2(self, unique_amadeus): 
         with pytest.raises(KeyError):
@@ -83,7 +83,7 @@ class TestAmadeus():
         jojoUrl = "https://www.crunchyroll.com/jojos-bizarre-adventure"
         animeNameClean = self.cleanAnimeName(jojoUrl.split("/")[-1])
         unique_amadeus.addUrl(animeNameClean, jojoUrl)
-        unique_amadeus.addStack(animeNameClean)
+        unique_amadeus.addAnime(animeNameClean)
         unique_amadeus.setSeason(animeNameClean, "2")
         unique_amadeus.addAlias(animeNameClean, "jojo")
 

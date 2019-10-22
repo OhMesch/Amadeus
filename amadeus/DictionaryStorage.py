@@ -1,11 +1,66 @@
 import sys
 import os.path
 import pickle
-
+import json
 
 # todo Add ability for multiple data stores (e.g. john_tom, john_kyle)
-class DictionaryStorage():
-    def __init__(self, filename, data_dir=None):
+def DictionaryStorage(filename, data_dir):
+    # return JSONDictionaryStorage(filename, data_dir)
+    return PickleDictionaryStorage(filename, data_dir)
+
+class JSONDictionaryStorage():
+    def __init__(self, filename, data_dir):
+        self.data = dict()
+        if not data_dir:
+            data_dir = os.path.abspath(os.path.join(
+                os.path.dirname(__file__), "..", "data"))
+        self.data_filepath = os.path.join(data_dir, filename + ".json")
+
+        if not os.path.exists(data_dir):
+            os.makedirs(data_dir)
+
+        if os.path.exists(self.data_filepath):
+            with open(self.data_filepath) as fd:
+                self.data = json.load(fd)
+
+
+    def __str__(self):
+        string = "{\n"
+        for k, v in self.data.items():
+            string += "\t{0}: {1}\n".format(k, v)
+        string += "}"
+        return string
+
+    def __getitem__(self, key):
+        return self.data[key]
+
+    def __setitem__(self, key, value):
+        self.data[key] = value
+        self.writeToStorage()
+
+    def __iter__(self):
+        return iter(list(self.data.keys()))
+
+    def __delitem__(self, key):
+        char_key = str(key)
+        del self.data[char_key]
+        self.writeToStorage()
+
+    def __contains__(self, key):
+        return bool(key in self.data)
+
+    def get(self, key, defaultVal=None):
+        return self.data.get(key, defaultVal)
+
+    def keys(self):
+        return self.data.keys()
+
+    def writeToStorage(self):
+        with open(self.data_filepath, 'w') as fd:
+            json.dump(self.data, fd)
+
+class PickleDictionaryStorage():
+    def __init__(self, filename, data_dir):
         self.data = dict()
         if not data_dir:
             data_dir = os.path.abspath(os.path.join(
