@@ -119,7 +119,7 @@ class TestTagPriorityManager():
         isekaiTitles = unique_tag_priority_manager_multiple_per_prio.getAnimeSequence("isekai")
         assert sorted(isekaiTitles) == sorted(["Papa Bones", "Arrietta", "Konosuba", "Shield", "Slime"])
 
-    # Need to convert more tests to using this instead of the default random provider
+    # TODO: Need to convert more tests to using this instead of the default random provider
     def test_multiple_getAnimeSequence(self, unique_tag_priority_manager_multiple_per_prio):
         unique_tag_priority_manager_multiple_per_prio.order_of_equal_list_provider = lambda x: sorted(x)
         assert unique_tag_priority_manager_multiple_per_prio.getAnimeSequence("isekai") == ["Arrietta", "Konosuba", "Papa Bones", "Shield", "Slime"]
