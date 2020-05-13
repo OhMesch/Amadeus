@@ -1,4 +1,5 @@
 import logging
+from logging.handlers import RotatingFileHandler
 import os
 
 from amadeus.DictionaryStorage import getDictionaryStorage
@@ -8,8 +9,15 @@ from validator_collection import validators, checkers
 
 class Amadeus():
     def __init__(self, data_dir=None):
-        # self.setUpLogging()
+        # Resolve data_dir 
+        if not data_dir:
+            data_dir = os.path.abspath(os.path.join(
+                os.path.dirname(__file__), "..", "data"))
+        if not os.path.exists(data_dir):
+            os.makedirs(data_dir)
+        self.setUpLogging(data_dir)
 
+        # Create storage objects
         self.anime_url = getDictionaryStorage("anime_url", data_dir)
         self.anime_ep = getDictionaryStorage("anime_ep", data_dir)
         self.anime_alias = getDictionaryStorage("anime_alias", data_dir)
@@ -17,6 +25,7 @@ class Amadeus():
         self.numPrioManager = NumericPriorityManger(data_dir)
         self.tagPrioManager = TagPriorityManger(data_dir)
         self.crunchy_scraper = CrunchyWebScraper()
+        self.data_dir = data_dir
 
     def __str__(self): # could probably return each of these better
         url_data = str(self.anime_url)
@@ -28,13 +37,28 @@ class Amadeus():
         return "URL Data:\n{0}\nStack Data:\n{1}\nAlias Data:\n{2}\nSeason Data:\n{3}\nNumeric Priority Manager:\n{4}\nTag Priority Manager:\n{5}\n".format(
             url_data, stack_data, alias_data, season_data, num_prio_data, tag_prio_data)
 
-    def setUpLogging(self):
-        self.logger = logging.getLogger(__name__)
-        f_handler = logging.FileHandler()
+    def setUpLogging(self, data_dir):
+        logging_dir = os.path.join(data_dir, 'logging')
+        if not os.path.exists(logging_dir):
+            os.makedirs(logging_dir)
+        log_file = os.path.join(logging_dir, 'log_file.log')
+
+        self.logger = logging.getLogger('my_fantastical_logger')
+        
+        ## handlers ##
+        f_handler = RotatingFileHandler(log_file, maxBytes=2000, backupCount=3)
         f_format = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         f_handler.setFormatter(f_format)
         self.logger.addHandler(f_handler)
-        logger.warning('Logger has been created')
+
+        # self.logger.setLevel(logging.INFO)
+        # self.logger.setLevel(logging.WARNING)
+        # self.logger.setLevel(logging.ERROR)
+        # self.logger.setLevel(logging.CRITICAL)
+        self.logger.setLevel(logging.DEBUG)
+
+        for i in range(100000):
+            self.logger.warning('Logger has been created ' + str(i))
 
     def stringifyAnimeInformation(self):
         joining = []

@@ -10,15 +10,9 @@ def getDictionaryStorage(filename, data_dir):
 
 
 class DictionaryStorage:
-    def __init__(self, filename, data_dir):
+    def __init__(self, filename, data_dir, file_extension):
         self.data = dict()
-        if not data_dir:
-            data_dir = os.path.abspath(os.path.join(
-                os.path.dirname(__file__), "..", "data"))
-        self.data_filepath = os.path.join(data_dir, filename + ".json")
-
-        if not os.path.exists(data_dir):
-            os.makedirs(data_dir)
+        self.data_filepath = os.path.join(data_dir, filename + '.' + file_extension)
 
         if os.path.exists(self.data_filepath):
             self.loadFromStorage()
@@ -63,7 +57,7 @@ class DictionaryStorage:
 
 class JSONDictionaryStorage(DictionaryStorage):
     def __init__(self, filename, data_dir):
-        super().__init__(filename, data_dir)
+        super().__init__(filename, data_dir, 'json')
 
     def loadFromStorage(self):
         with open(self.data_filepath) as fd:
@@ -75,7 +69,7 @@ class JSONDictionaryStorage(DictionaryStorage):
 
 class PickleDictionaryStorage(DictionaryStorage):
     def __init__(self, filename, data_dir):
-        super().__init__(filename, data_dir)
+        super().__init__(filename, data_dir, 'pickle')
 
     def loadFromStorage(self):
         with open(self.data_filepath, "rb") as fileIO:
