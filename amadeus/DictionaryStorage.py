@@ -10,15 +10,6 @@ def getDictionaryStorage(filename, data_dir):
 
 
 class DictionaryStorage:
-    def __init__(self):
-        pass
-
-    def items(self):
-        for key in self:
-            yield (key, self[key])
-
-
-class JSONDictionaryStorage(DictionaryStorage):
     def __init__(self, filename, data_dir):
         self.data = dict()
         if not data_dir:
@@ -30,9 +21,7 @@ class JSONDictionaryStorage(DictionaryStorage):
             os.makedirs(data_dir)
 
         if os.path.exists(self.data_filepath):
-            with open(self.data_filepath) as fd:
-                self.data = json.load(fd)
-
+            self.loadFromStorage()
 
     def __str__(self):
         string = "{\n"
@@ -43,6 +32,9 @@ class JSONDictionaryStorage(DictionaryStorage):
 
     def __getitem__(self, key):
         return self.data[key]
+
+    def __contains__(self, key):
+        return bool(key in self.data)
 
     def __setitem__(self, key, value):
         self.data[key] = value
@@ -56,14 +48,26 @@ class JSONDictionaryStorage(DictionaryStorage):
         del self.data[char_key]
         self.writeToStorage()
 
-    def __contains__(self, key):
-        return bool(key in self.data)
-
     def get(self, key, defaultVal=None):
         return self.data.get(key, defaultVal)
 
+    def items(self):
+        for key in self:
+            yield (key, self[key])
+
     def keys(self):
         return self.data.keys()
+
+    def writeToStorage(self):
+        raise Exception('This is the base class! Cannot call writeToStorage')
+
+class JSONDictionaryStorage(DictionaryStorage):
+    def __init__(self, filename, data_dir):
+        super().__init__(filename, data_dir)
+
+    def loadFromStorage(self):
+        with open(self.data_filepath) as fd:
+            self.data = json.load(fd)
 
     def writeToStorage(self):
         with open(self.data_filepath, 'w') as fd:
@@ -71,53 +75,12 @@ class JSONDictionaryStorage(DictionaryStorage):
 
 class PickleDictionaryStorage(DictionaryStorage):
     def __init__(self, filename, data_dir):
-        self.data = dict()
-        if not data_dir:
-            data_dir = os.path.abspath(os.path.join(
-                os.path.dirname(__file__), "..", "data"))
-        self.data_filepath = os.path.join(data_dir, filename + ".p")
+        super().__init__(filename, data_dir)
 
-        if not os.path.exists(data_dir):
-            os.makedirs(data_dir)
-
-        if os.path.exists(self.data_filepath):
-            self.loadSerial()
-
-    def __str__(self):
-        string = "{\n"
-        for k, v in self.data.items():
-            string += "\t{0}: {1}\n".format(k, v)
-        string += "}"
-        return string
-
-    def __getitem__(self, key):
-        return self.data[key]
-
-    def __setitem__(self, key, value):
-        self.data[key] = value
-        self.writeSerial()
-
-    def __iter__(self):
-        return iter(self.data.keys())
-
-    def __delitem__(self, key):
-        char_key = str(key)
-        del self.data[char_key]
-        self.writeSerial()
-
-    def __contains__(self, key):
-        return bool(key in self.data)
-
-    def get(self, key, defaultVal=None):
-        return self.data.get(key, defaultVal)
-
-    def keys(self):
-        return self.data.keys()
-
-    def loadSerial(self):
+    def loadFromStorage(self):
         with open(self.data_filepath, "rb") as fileIO:
             self.data = pickle.load(fileIO)
 
-    def writeSerial(self):
+    def writeToStorage(self):
         with open(self.data_filepath, "wb") as fileIO:
             pickle.dump(self.data, fileIO)
