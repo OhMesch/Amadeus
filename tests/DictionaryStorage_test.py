@@ -4,17 +4,17 @@ import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import pytest
 
-from amadeus.DictionaryStorage import DictionaryStorage
+from amadeus.DictionaryStorage import getDictionaryStorage
 
 
 @pytest.fixture(scope="function")
 def unique_dictionary_storage(tmpdir):
-    return DictionaryStorage("testfilename", tmpdir.strpath)
+    return getDictionaryStorage("testfilename", tmpdir.strpath)
 
 
 @pytest.fixture(scope="function")
 def filled_unique_dictionary_storage(tmpdir):
-    ds = DictionaryStorage("testfilename", tmpdir.strpath)
+    ds = getDictionaryStorage("testfilename", tmpdir.strpath)
     ds[11] = "fishy"
     ds["dogs"] = 1
     ds["wallet"] = [1, 2, 3]
