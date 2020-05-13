@@ -1,14 +1,19 @@
-from amadeus.DictionaryStorage import DictionaryStorage
+import logging
+import os
+
+from amadeus.DictionaryStorage import getDictionaryStorage
 from amadeus.CrunchyWebScraper import CrunchyWebScraper
 from amadeus.PriorityManager import NumericPriorityManger, TagPriorityManger
 from validator_collection import validators, checkers
 
 class Amadeus():
     def __init__(self, data_dir=None):
-        self.anime_url = DictionaryStorage("anime_url", data_dir)
-        self.anime_ep = DictionaryStorage("anime_ep", data_dir)
-        self.anime_alias = DictionaryStorage("anime_alias", data_dir)
-        self.anime_season = DictionaryStorage("anime_season", data_dir)
+        # self.setUpLogging()
+
+        self.anime_url = getDictionaryStorage("anime_url", data_dir)
+        self.anime_ep = getDictionaryStorage("anime_ep", data_dir)
+        self.anime_alias = getDictionaryStorage("anime_alias", data_dir)
+        self.anime_season = getDictionaryStorage("anime_season", data_dir)
         self.numPrioManager = NumericPriorityManger(data_dir)
         self.tagPrioManager = TagPriorityManger(data_dir)
         self.crunchy_scraper = CrunchyWebScraper()
@@ -23,6 +28,31 @@ class Amadeus():
         return "URL Data:\n{0}\nStack Data:\n{1}\nAlias Data:\n{2}\nSeason Data:\n{3}\nNumeric Priority Manager:\n{4}\nTag Priority Manager:\n{5}\n".format(
             url_data, stack_data, alias_data, season_data, num_prio_data, tag_prio_data)
 
+    def setUpLogging(self):
+        self.logger = logging.getLogger(__name__)
+        f_handler = logging.FileHandler()
+        f_format = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        f_handler.setFormatter(f_format)
+        self.logger.addHandler(f_handler)
+        logger.warning('Logger has been created')
+
+    def stringifyAnimeInformation(self):
+        joining = []
+        for full_title, episode_num in self.anime_ep.items():
+            season = self.anime_season[full_title]
+            
+            # TODO Uses O(N) loop to match aliases, probably need reverse dictionary
+            print_alias_string = ''
+            aliases = []
+            for alias, curr_full_title in self.anime_alias.items():
+                if curr_full_title == full_title:
+                    aliases.append('"' + alias + '"')
+            if aliases:
+                print_alias_string = ' [' + ', '.join(aliases) + ']'
+
+            joining.append('{0}{1}: **Season {2} - Episode {3}**'.format(full_title, print_alias_string, str(season), str(episode_num)))
+        return '\n'.join(joining)
+
     def addAlias(self, existing_ey, new_key):
         if existing_ey.lower() in self.anime_alias:
             self.anime_alias[new_key] = self.anime_alias[existing_ey.lower()]
@@ -30,7 +60,6 @@ class Amadeus():
         elif existing_ey in self.anime_ep:
             self.anime_alias[new_key] = existing_ey
             return existing_ey
-        return None
 
     def removeAlias(self, alias):
         del self.anime_alias[alias]

@@ -1,6 +1,6 @@
 import discord
 from validator_collection import validators, checkers
-from TokenDistributer import TokenDistributer
+import TokenDistributer
 import sys
 import os
 import difflib
@@ -32,6 +32,9 @@ async def on_ready():
 #Resource files for strings
 @client.event
 async def on_message(message):
+    # on_message can run prior to on_ready finishing
+    if amadeusDriver == None:
+        return
     # we do not want the bot to reply to itself
     if message.author == client.user:
         return
@@ -148,8 +151,10 @@ async def removeAnimeFromStack(message, args):
     await message.channel.send(errMsg)
 
 async def printStack(message, args):
-    stack = amadeusDriver.stack
-    await message.channel.send(stack)
+    stringified_information = amadeusDriver.stringifyAnimeInformation()
+    if not stringified_information:
+        stringified_information = 'Theres nothing on the stack! This is a literal tragedy {0}'.format('<:virus:702269312924123186> ' * 1)
+    await message.channel.send(stringified_information)
 
 async def parseAlias(message, args):
     if message.content.startswith('!alias+'):

@@ -1,9 +1,9 @@
 ﻿import random
-from amadeus.DictionaryStorage import DictionaryStorage
+from amadeus.DictionaryStorage import getDictionaryStorage
 
 class PriorityManger():
     def __init__(self, filename, data_dir):
-        self.prio = DictionaryStorage(filename, data_dir)
+        self.prio = getDictionaryStorage(filename, data_dir)
         self.order_of_equal_list_provider = lambda list_in: random.sample(list_in, len(list_in))
 
     def __str__(self):
@@ -39,7 +39,7 @@ class TagPriorityManger(PriorityManger):
 class NumericPriorityManger(PriorityManger):
     def __init__(self, data_dir):
         super().__init__("prionumeric", data_dir)
-        self.lookup = DictionaryStorage("reverseprionumeric", data_dir)
+        self.lookup = getDictionaryStorage("reverseprionumeric", data_dir)
 
     def addPrio(self, prioTargetName, priority):
         if prioTargetName in self.lookup:

@@ -4,11 +4,21 @@ import pickle
 import json
 
 # todo Add ability for multiple data stores (e.g. john_tom, john_kyle)
-def DictionaryStorage(filename, data_dir):
-    # return JSONDictionaryStorage(filename, data_dir)
-    return PickleDictionaryStorage(filename, data_dir)
+def getDictionaryStorage(filename, data_dir):
+    return JSONDictionaryStorage(filename, data_dir)
+    # return PickleDictionaryStorage(filename, data_dir)
 
-class JSONDictionaryStorage():
+
+class DictionaryStorage:
+    def __init__(self):
+        pass
+
+    def items(self):
+        for key in self:
+            yield (key, self[key])
+
+
+class JSONDictionaryStorage(DictionaryStorage):
     def __init__(self, filename, data_dir):
         self.data = dict()
         if not data_dir:
@@ -39,7 +49,7 @@ class JSONDictionaryStorage():
         self.writeToStorage()
 
     def __iter__(self):
-        return iter(list(self.data.keys()))
+        return iter(self.data.keys())
 
     def __delitem__(self, key):
         char_key = str(key)
@@ -59,7 +69,7 @@ class JSONDictionaryStorage():
         with open(self.data_filepath, 'w') as fd:
             json.dump(self.data, fd)
 
-class PickleDictionaryStorage():
+class PickleDictionaryStorage(DictionaryStorage):
     def __init__(self, filename, data_dir):
         self.data = dict()
         if not data_dir:
@@ -88,7 +98,7 @@ class PickleDictionaryStorage():
         self.writeSerial()
 
     def __iter__(self):
-        return iter(list(self.data.keys()))
+        return iter(self.data.keys())
 
     def __delitem__(self, key):
         char_key = str(key)
