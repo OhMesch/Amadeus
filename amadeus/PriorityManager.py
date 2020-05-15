@@ -78,7 +78,7 @@ class NumericPriorityManger(PriorityManger):
         sorted_prio_keys = sorted(map(int, (list(self.prio.keys()))))
         anime_order = []
         for key in sorted_prio_keys:
-            animes = self.prio[key]
+            animes = self.prio[str(key)]
             anime_order.extend(self.order_of_equal_list_provider(animes))
         return anime_order
     

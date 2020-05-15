@@ -327,8 +327,9 @@ async def setPrio(message, args):
         await message.channel.send(errMsg)
         return
 
-    if amadeusDriver.setPrio(args[1], args[2]):
-        await message.channel.send('{0} is now priority {1}'.format(args[1], args[2]))
+    animeNameOrAlias = ' '.join(args[1].split('-'))
+    if amadeusDriver.setPrio(animeNameOrAlias, args[2]):
+        await message.channel.send('{0} is now priority {1}'.format(animeNameOrAlias, args[2]))
     else:
         errMsg = 'Please confirm you have entered a valid anime name or alias.'
         await message.channel.send(errMsg)

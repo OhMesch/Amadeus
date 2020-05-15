@@ -86,6 +86,7 @@ class CrunchyWebScraper():
         self.logger.info('getHTMLFromURL: getting raw html from: {0}'.format(url))
         code = requests.get(url)
         html_plain_text = code.text
+        self.logger.debug('raw html text: {0}'.format(html_plain_text))
         html_soup = BeautifulSoup(html_plain_text, "html.parser")
         return html_soup
 
