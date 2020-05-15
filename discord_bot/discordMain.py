@@ -10,8 +10,16 @@ from amadeus.Amadeus import Amadeus
 import traceback
 import concurrent
 import discord.utils
+import argparse
 
 
+arg_parser = argparse.ArgumentParser()
+arg_parser.add_argument('-d', '--data_directory', default='', type=str, help="enables python stack trace")
+args = arg_parser.parse_args()
+
+data_directory = None
+if args.data_directory:
+    data_directory = args.data_directory
 client = discord.Client()
 amadeusDriver = None
 
@@ -21,15 +29,15 @@ async def on_ready():
     print('Logged in as')
     print(client.user.name)
     print(client.user.id)
-    amadeusDriver = Amadeus()
+    amadeusDriver = Amadeus(data_directory)
     print('------')
 
-#TODO revisit naming convention of functions and variables
-#TODO add rename tag function
-#TODO Should we be using **kwargs to simplify optionals as more
+# TODO revisit naming convention of functions and variables
+# TODO add rename tag function
+# TODO Should we be using **kwargs to simplify optionals as more
 # i.e. !stack+ myanime myanimehome -prio 3 -ep 2 -season 3
-#TODO We have a lot of repeat code for scrubbing anime names and makingsure they blong to the stack. DRY
-#Resource files for strings
+# TODO We have a lot of repeat code for scrubbing anime names and makingsure they blong to the stack. DRY
+# Resource files for strings
 @client.event
 async def on_message(message):
     # on_message can run prior to on_ready finishing
@@ -131,20 +139,18 @@ async def addAnimeToStack(message, args):
         errMsg = 'Please enter the form of: "!stack+ www.url-to-anime-home.com" "optional Alias".'
         await message.channel.send(errMsg)
         return
-
-    url = args[1]
-    if validators.url(url):
-        animeNameClean = cleanAnimeName(url.split("/")[-1])
-        amadeusDriver.addUrl(animeNameClean, url)
-        amadeusDriver.addAnime(animeNameClean)
-        amadeusDriver.setSeason(animeNameClean, "1")
-    else:
-        errMsg = 'Please confirm you have entered a valid url address.'
+    potential_url = args[1]
+    potential_alias = ''
+    if len(args) == 3:
+        potential_alias = args[2]
+    try:
+        amadeusDriver.addNewAnime(potential_url, potential_alias)
+    except ValueError as e:
+        errMsg = 'Please confirm you have entered a valid url address, the link provided failed URL validation'
         await message.channel.send(errMsg)
-
-    potentialAlias = " ".join(args[2:])
-    if potentialAlias:
-        amadeusDriver.addAlias(animeNameClean, potentialAlias)
+    except UnboundLocalError as e:
+        errMsg = 'alias provided: {0} has whitespace in it, please remove the whitespace'.format(potential_alias)
+        await message.channel.send(errMsg)
 
 async def removeAnimeFromStack(message, args):
     errMsg = 'Not currently implemented.'
@@ -152,7 +158,7 @@ async def removeAnimeFromStack(message, args):
 
 async def printStack(message, args):
     stringified_information = amadeusDriver.stringifyAnimeInformation()
-    if not stringified_information:
+    if stringified_information.isspace():
         stringified_information = 'Theres nothing on the stack! This is a literal tragedy {0}'.format('<:virus:702269312924123186> ' * 1)
     await message.channel.send(stringified_information)
 
@@ -171,15 +177,20 @@ async def addAlias(message, args):
         errMsg = 'Please enter the form of: "!alias+ anime-stack-name newAlias"\nOr:\n"!alias+ currAlias newAlias".'
         await message.channel.send(errMsg)
         return
-    newAlias = "".join(args[2:])
+    newAlias = " ".join(args[2:])
     animeNameClean = cleanAnimeName(args[1])
 
-    aliasOrTitle = amadeusDriver.addAlias(animeNameClean, newAlias)
+    try:
+        aliasOrTitle = amadeusDriver.addAlias(animeNameClean, newAlias)
+    except UnboundLocalError as e:
+        errMsg = 'alias provided: {0} has whitespace in it, please remove the whitespace'.format(potential_alias)
+        await message.channel.send(errMsg)
+
     if aliasOrTitle:
         succMsg = 'Added "{0}" as an alias for "{1}".'.format(newAlias, aliasOrTitle)
         await message.channel.send(succMsg)
     else:
-        errMsg = 'Please confirm you have entered a valid anime name.'
+        errMsg = 'Please confirm you have entered a valid anime name. Could not find {0}'.format(animeNameClean)
         await message.channel.send(errMsg)
 
 async def returnEpToUser(message, animeEpisodeName, currEpLink, currEpNum, currSeasonNum):
@@ -217,14 +228,14 @@ async def getCurrEpAndIncrement(message, args):
         currEpLink = amadeusDriver.getSeasonEpisodeFromTitle(animeEpisodeName, 0, currSeasonNum + 1)
         if currEpLink:
             await returnEpToUser(message, animeEpisodeName, currEpLink, currEpNum, currSeasonNum)
-            amadeusDriver.setEp(animeEpisodeName, 0)
+            amadeusDriver.setEpisode(animeEpisodeName, 0)
             amadeusDriver.setSeason(animeEpisodeName, currSeasonNum + 1)
             return
 
         currEpLink = amadeusDriver.getSeasonEpisodeFromTitle(animeEpisodeName, 1, currSeasonNum + 1)
         if currEpLink:
             await returnEpToUser(message, animeEpisodeName, currEpLink, currEpNum, currSeasonNum)
-            amadeusDriver.setEp(animeEpisodeName, 1)
+            amadeusDriver.setEpisode(animeEpisodeName, 1)
             amadeusDriver.setSeason(animeEpisodeName, currSeasonNum + 1)
             return
 
@@ -244,7 +255,7 @@ async def setCurrEp(message, args):
     if checkers.is_integer(ep):
         key = "".join(args[1:-1])
         trueKey = amadeusDriver.getTitleFromKey(key)
-        amadeusDriver.setEp(trueKey, ep)
+        amadeusDriver.setEpisode(trueKey, ep)
         succMsg = 'Updated stack of {0} to episode {1}'.format(trueKey,ep)
         await message.channel.send(succMsg)
     else:
@@ -271,7 +282,7 @@ async def setCurrSeason(message, args):
     if isValidSeason:
         key = "".join(args[1:-1])
         trueKey = amadeusDriver.getTitleFromKey(key)
-        amadeusDriver.setEp(trueKey, season)
+        amadeusDriver.setEpisode(trueKey, season)
         succMsg = 'Updated stack of {0} to season {1}'.format(trueKey,season)
         await message.channel.send(succMsg)
     else:
@@ -294,7 +305,7 @@ async def pop(message, args):
         await message.channel.send(succMsg)
         await message.channel.send(embed=embedEpisode)
     else:
-        errMsg = '"Currently caught up on this stack. Weeb.'
+        errMsg = 'You are currently caught up on this stack. Probably there is something wrong, or you are the world\'s largest weeb.' 
         await message.channel.send(errMsg)
 
 async def parsePrio(message, args):

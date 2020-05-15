@@ -2,6 +2,7 @@ import sys
 import os.path
 import pickle
 import json
+import logging
 
 # todo Add ability for multiple data stores (e.g. john_tom, john_kyle)
 def getDictionaryStorage(filename, data_dir):
@@ -11,11 +12,17 @@ def getDictionaryStorage(filename, data_dir):
 
 class DictionaryStorage:
     def __init__(self, filename, data_dir, file_extension):
+        # Logging
+        self.logger = logging.getLogger('my_fantastical_logger')
+        self.logger.warning('__init__: {0} has been created'.format(self.__class__.__name__))
+
+        # Other
         self.data = dict()
         self.data_filepath = os.path.join(data_dir, filename + '.' + file_extension)
 
         if os.path.exists(self.data_filepath):
             self.loadFromStorage()
+        
 
     def __str__(self):
         string = "{\n"
@@ -60,10 +67,12 @@ class JSONDictionaryStorage(DictionaryStorage):
         super().__init__(filename, data_dir, 'json')
 
     def loadFromStorage(self):
+        self.logger.warning('loadFromStorage: loading file: {0} as JSON'.format(self.data_filepath))
         with open(self.data_filepath) as fd:
             self.data = json.load(fd)
 
     def writeToStorage(self):
+        self.logger.warning('writeToStorage: writing to file: {0} as JSON'.format(self.data_filepath))
         with open(self.data_filepath, 'w') as fd:
             json.dump(self.data, fd)
 
@@ -72,9 +81,11 @@ class PickleDictionaryStorage(DictionaryStorage):
         super().__init__(filename, data_dir, 'pickle')
 
     def loadFromStorage(self):
+        self.logger.warning('loadFromStorage: reading from file: {0} as PICKLE binary'.format(self.data_filepath))
         with open(self.data_filepath, "rb") as fileIO:
             self.data = pickle.load(fileIO)
 
     def writeToStorage(self):
+        self.logger.warning('writeToStorage: writing to file: {0} as PICKLE binary'.format(self.data_filepath))
         with open(self.data_filepath, "wb") as fileIO:
             pickle.dump(self.data, fileIO)

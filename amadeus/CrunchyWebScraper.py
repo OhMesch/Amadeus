@@ -1,6 +1,7 @@
 import requests
 import re
 import time
+import logging
 from bs4 import BeautifulSoup
 from collections import defaultdict
 
@@ -8,11 +9,17 @@ from collections import defaultdict
 class CrunchyWebScraper():
     def __init__(self, throttle_max = 10, throttle_period_seconds = 10, 
             time_save_req_seconds = 60 * 60):
+        # Logging
+        self.logger = logging.getLogger('my_fantastical_logger')
+        self.logger.warning('__init__: {0} has been created'.format(self.__class__.__name__))
+        
+        # Other
         self.requests_log = defaultdict(int)
         self.throttle_max = throttle_max
         self.throttle_period_seconds = throttle_period_seconds
         self.time_save_req_seconds = time_save_req_seconds
 
+    ## Helpers for throttling mechanisms ##
     @property
     def now_seconds(self):
         return int(time.time())
@@ -21,12 +28,12 @@ class CrunchyWebScraper():
     # could change algorithm here, or clean at less frequent intervals. with a larger
     # time_save_req_seconds this could be slow. OrderedDict would also work
     def cleanRequests(self, now_seconds = None):
+        self.logger.warning('cleanRequests: wiping history of web requests for the last {0} seconds'.format(self.time_save_req_seconds))
         if not now_seconds:
             now_seconds = self.now_seconds
         for date in list(self.requests_log.keys()):
-            print(date)
-            print(now_seconds - self.time_save_req_seconds)
             if date < now_seconds - self.time_save_req_seconds:
+                self.logger.debug('cleanRequests: deleting web request entry {0}'.format(date))
                 del self.requests_log[date]
 
     # 0 returns current second
@@ -43,15 +50,18 @@ class CrunchyWebScraper():
         for date in range(start, start + self.throttle_period_seconds + 1):
             total += self.requests_log[date]
         if total + num_requests > self.throttle_max:
-            raise Exception("Throttle violation (429) in CrunchyWebScraper." + 
-                " You tried to make {0} requests when you have already used".format(num_requests) + 
-                " {0} requests in the last {1} seconds".format(total, self.throttle_period_seconds))
+            msg = 'Throttle violation (429) in CrunchyWebScraper.' + \
+                ' You tried to make {0} requests when you have already used'.format(num_requests) + \
+                ' {0} requests in the last {1} seconds'.format(total, self.throttle_period_seconds)
+            self.logger.warning(msg)
+            raise Exception(msg)
         self.logRequest(num_requests)
 
     def logRequest(self, num_requests):
         self.cleanRequests()
         self.requests_log[self.now_seconds] += num_requests
 
+    ## Actual web scraping ##
     def getEpisodeLink(self, url, requested_ep, season = "1"):
         eps_across_seasons = []
         all_eplinks = self.scrapeUrlForEpisodeLinks(url)
@@ -73,6 +83,7 @@ class CrunchyWebScraper():
 
     def getHTMLFromURL(self, url):
         self.throttleRequests(1)
+        self.logger.info('getHTMLFromURL: getting raw html from: {0}'.format(url))
         code = requests.get(url)
         html_plain_text = code.text
         html_soup = BeautifulSoup(html_plain_text, "html.parser")

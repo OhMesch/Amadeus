@@ -23,16 +23,11 @@ def unique_amadeus(tmpdir):
 
 class TestAmadeus():
     def test_add_stack_1(self, unique_amadeus): 
-        unique_amadeus.addAnime("SlimeLongName")
+        unique_amadeus.setEpisode("SlimeLongName")
         assert unique_amadeus.anime_ep["SlimeLongName"] == 1
 
-    def test_add_stack_2(self, unique_amadeus): 
-        with pytest.raises(Exception):
-            unique_amadeus.addAnime("SlimeLongName")
-            unique_amadeus.addAnime("SlimeLongName")
-
     def test_remove_stack_1(self, unique_amadeus): 
-        unique_amadeus.addAnime("DearPhillip")
+        unique_amadeus.setEpisode("DearPhillip")
         unique_amadeus.removeAnime("DearPhillip")
         assert "DearPhillip" not in unique_amadeus.anime_ep
 
@@ -45,12 +40,12 @@ class TestAmadeus():
         ("SlimeLongName", "Slime")
     ])
     def test_add_alias_1(self, unique_amadeus, actual, alias):
-        unique_amadeus.addAnime(actual)
+        unique_amadeus.setEpisode(actual)
         unique_amadeus.addAlias(actual, alias)
         assert unique_amadeus.anime_alias[alias] == actual
 
     def test_add_alias_2(self, unique_amadeus):
-        unique_amadeus.addAnime("SlimeLongName")
+        unique_amadeus.setEpisode("SlimeLongName")
         unique_amadeus.addAlias("SlimeLongName", "Slime")
         unique_amadeus.addAlias("SlimeLongName", "AnotherSlimeAlias")
         assert unique_amadeus.anime_alias["Slime"] == "SlimeLongName"
@@ -64,7 +59,7 @@ class TestAmadeus():
         assert None == unique_amadeus.addAlias("SlimeLongName", "Slime")
 
     def test_remove_alias_1(self, unique_amadeus):
-        unique_amadeus.addAnime("SlimeLongName")
+        unique_amadeus.setEpisode("SlimeLongName")
         unique_amadeus.addAlias("SlimeLongName", "BigSlime")
         unique_amadeus.removeAlias("BigSlime")
         assert "BigSlime" not in unique_amadeus.anime_alias
@@ -83,7 +78,7 @@ class TestAmadeus():
         jojoUrl = "https://www.crunchyroll.com/jojos-bizarre-adventure"
         animeNameClean = self.cleanAnimeName(jojoUrl.split("/")[-1])
         unique_amadeus.addUrl(animeNameClean, jojoUrl)
-        unique_amadeus.addAnime(animeNameClean)
+        unique_amadeus.setEpisode(animeNameClean)
         unique_amadeus.setSeason(animeNameClean, "2")
         unique_amadeus.addAlias(animeNameClean, "jojo")
 

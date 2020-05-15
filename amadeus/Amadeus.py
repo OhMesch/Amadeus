@@ -46,38 +46,73 @@ class Amadeus():
         self.logger = logging.getLogger('my_fantastical_logger')
         
         ## handlers ##
-        f_handler = RotatingFileHandler(log_file, maxBytes=2000, backupCount=3)
+        f_handler = RotatingFileHandler(log_file, maxBytes=20000, backupCount=3)
         f_format = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         f_handler.setFormatter(f_format)
         self.logger.addHandler(f_handler)
+
+        console_handler = logging.StreamHandler()
+        console_handler.setLevel(logging.DEBUG)
+        self.logger.addHandler(console_handler)
 
         # self.logger.setLevel(logging.INFO)
         # self.logger.setLevel(logging.WARNING)
         # self.logger.setLevel(logging.ERROR)
         # self.logger.setLevel(logging.CRITICAL)
         self.logger.setLevel(logging.DEBUG)
+        self.logger.warning('setUpLogging: Logger created')
 
-        for i in range(100000):
-            self.logger.warning('Logger has been created ' + str(i))
+    # TODO honestly im just using random python exceptions for control flow. ignore the names and add custom exceptions later
+    def addNewAnime(self, url, alias = ''):
+        if not validators.url(url):
+            raise ValueError()
+        if ' ' in alias:
+            errMsg = 'alias provided: {0} has whitespace in it, please remove the whitespace'.format(alias)
+            raise UnboundLocalError()
+
+        animeNameClean = self.cleanAnimeName(url.split("/")[-1])
+        amadeusDriver.addUrl(animeNameClean, url)
+        amadeusDriver.setEpisode(animeNameClean)
+        amadeusDriver.setSeason(animeNameClean, "1")
+        amadeusDriver.addAlias(animeNameClean, alias)
+
+    def cleanAnimeName(dirtyName):
+        animeNameLower = dirtyName.replace('-',' ').lower()
+        animeNameClean = " ".join(list(map(lambda x: x.capitalize(), animeNameLower.split())))
+        return animeNameClean
 
     def stringifyAnimeInformation(self):
+        # return str(self.numPrioManager) + '\n\n' + str(self.tagPrioManager)
         joining = []
         for full_title, episode_num in self.anime_ep.items():
             season = self.anime_season[full_title]
             
-            # TODO Uses O(N) loop to match aliases, probably need reverse dictionary
+            # Alias matching: TODO Uses O(N) loop to match aliases, probably need reverse dictionary
             print_alias_string = ''
             aliases = []
             for alias, curr_full_title in self.anime_alias.items():
                 if curr_full_title == full_title:
                     aliases.append('"' + alias + '"')
             if aliases:
-                print_alias_string = ' [' + ', '.join(aliases) + ']'
+                print_alias_string = ' Aliases: [' + ', '.join(aliases) + ']'
 
-            joining.append('{0}{1}: **Season {2} - Episode {3}**'.format(full_title, print_alias_string, str(season), str(episode_num)))
+            # Priority matching: TODO Uses O(N) loop to match aliases, probably need reverse dictionary
+            print_priority = ''
+            priorities = []
+            for priority in self.numPrioManager.getPriorities(full_title) + self.tagPrioManager.getPriorities(full_title):
+                if curr_full_title == full_title:
+                    priorities.append('"' + alias + '"')
+            if priorities:
+                print_alias_string = '\n{0}Priorities: ' + ', '.join(' ' * 4, priorities)
+
+            joining.append('**{1}**{2}:\n{0}Season {3} - Episode {4}{5}'.format(
+                ' ' * 4, full_title, print_alias_string, str(season), str(episode_num), print_priority))
         return '\n'.join(joining)
 
     def addAlias(self, existing_ey, new_key):
+        if ' ' in new_key:
+            errMsg = 'alias provided: {0} has whitespace in it, please remove the whitespace'.format(new_key)
+            raise UnboundLocalError()
         if existing_ey.lower() in self.anime_alias:
             self.anime_alias[new_key] = self.anime_alias[existing_ey.lower()]
             return existing_ey.lower()
@@ -88,14 +123,10 @@ class Amadeus():
     def removeAlias(self, alias):
         del self.anime_alias[alias]
 
-    def addAnime(self, show):
-        if show in self.anime_ep:
-            raise Exception("{0} already is in self.anime_ep".format(show))
-        self.anime_ep[show] = 1
+    def setEpisode(self, show, episodeNumber = 1):
+        self.anime_ep[show] = episodeNumber
 
-    def setEp(self, show, ep):
-        self.anime_ep[show] = ep
-
+    # TODO don't we need to remove from a ton of different storages here
     def removeAnime(self, show):
         del self.anime_ep[show]
 
@@ -133,19 +164,19 @@ class Amadeus():
     #TODO this can be clearer
     def pop(self, tag=''):
         if checkers.is_string(tag, minimum_length=1):
-            popOrder = self.tagPrioManager.getTitleSequence(tag)
+            popOrder = self.tagPrioManager.getAnimeSequence(tag)
         else:
-            popOrder = self.numPrioManager.getTitleSequence()
+            popOrder = self.numPrioManager.getAnimeSequence()
 
         #TODO DRY -> Can we reuse getEpAndIncriment? Might have a hard time if there is nothing there.
-        print(popOrder)
+        self.logger.debug('pop: poporder is: {0}'.format(popOrder))
         for anime in popOrder:
             currEpNum = self.getCurrEpNumber(anime)
             currEpLink = self.getEpisodeFromTitle(anime, currEpNum)
             if currEpLink:
                 self.incrementStack(anime)
-                return (currEpLink,currEpNum,anime)
-        return None
+                return (currEpLink, currEpNum, anime)
+        return (None, None, None)
 
     def setPrio(self, anime, key):
         if checkers.is_integer(key):
