@@ -10,3 +10,10 @@ pip install -r requirements.txt
 Visit `https://discordapp.com/developers/applications/` for instructions on how to create the bot
 
 Then, with the client_id go to `https://discordapp.com/oauth2/authorize?client_id=BOT_ID_HERE&scope=bot&permissions=0` to invite the bot to your server. (0 is no permissions)
+
+## Running the bot
+To pass in a data directory use the `-d` flag. Example:
+`python discordMain.py -d C:/storage/amadeus_data`
+The last directory does not have to exist. The program will create it for you. 
+
+For the server to turn back on on filesystem refresh run: `hupper -m discordMain.py -d C:/storage/amadeus_data`

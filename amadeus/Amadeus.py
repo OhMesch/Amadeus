@@ -38,17 +38,21 @@ class Amadeus():
             url_data, stack_data, alias_data, season_data, num_prio_data, tag_prio_data)
 
     def __contains__(self, animeTitleOrAlias):
-        if animeTitleOrAlias in self.anime_url:
+        if not animeTitleOrAlias:
+            return False
+        if animeTitleOrAlias.lower() in self.anime_url:
             return True
-        for animeTitle, alias in self.anime_alias:
+        for animeTitle, alias in self.anime_alias.items():
             if animeTitleOrAlias == alias:
                 return True
         return False
 
     def getTitleFromAlias(self, animeTitleOrAlias):
+        if not animeTitleOrAlias:
+            return ''
         if animeTitleOrAlias in self.anime_url:
             return self.anime_url[animeTitleOrAlias]
-        for animeTitle, alias in self.anime_alias:
+        for alias, animeTitle in self.anime_alias.items():
             if animeTitleOrAlias == alias:
                 return animeTitle
         return ''
@@ -87,12 +91,12 @@ class Amadeus():
             raise UnboundLocalError()
 
         animeNameClean = self.cleanAnimeName(url.split("/")[-1])
-        amadeusDriver.addUrl(animeNameClean, url)
-        amadeusDriver.setEpisode(animeNameClean)
-        amadeusDriver.setSeason(animeNameClean, "1")
-        amadeusDriver.addAlias(animeNameClean, alias)
+        self.addUrl(animeNameClean, url)
+        self.setEpisode(animeNameClean)
+        self.setSeason(animeNameClean, "1")
+        self.addAlias(animeNameClean, alias)
 
-    def cleanAnimeName(dirtyName):
+    def cleanAnimeName(self, dirtyName):
         animeNameLower = dirtyName.replace('-',' ').lower()
         animeNameClean = " ".join(list(map(lambda x: x.capitalize(), animeNameLower.split())))
         return animeNameClean
@@ -107,6 +111,7 @@ class Amadeus():
             aliases = []
             for alias, curr_full_title in self.anime_alias.items():
                 if curr_full_title == full_title:
+                    self.logger.debug('alias found for: {0}, alias is: {1}'.format(curr_full_title, alias))
                     aliases.append('"' + alias + '"')
             if aliases:
                 print_alias_string = ' Aliases: [' + ', '.join(aliases) + ']'
@@ -115,8 +120,7 @@ class Amadeus():
             print_priority_string = ''
             priorities = []
             for priority in self.numPrioManager.getPriorities(full_title) + self.tagPrioManager.getPriorities(full_title):
-                if curr_full_title == full_title:
-                    priorities.append('"' + priority + '"')
+                priorities.append(priority)
             if priorities:
                 print_priority_string = '\n{0}Priorities: '.format(' ' * 4) + ', '.join(priorities)
 
@@ -126,6 +130,8 @@ class Amadeus():
 
     def addAlias(self, animeTitle, alias):
         #TODO remove exceptions
+        if not alias:
+            return False
         if ' ' in alias:
             errMsg = 'alias provided: {0} has whitespace in it, please remove the whitespace'.format(alias)
             raise UnboundLocalError()

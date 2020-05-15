@@ -158,9 +158,9 @@ async def removeAnimeFromStack(message, args):
     await message.channel.send(errMsg)
 
 async def printStack(message, args):
-    stringified_information = amadeusDriver.stringifyAnimeInformation()
-    if stringified_information.isspace():
-        stringified_information = 'Theres nothing on the stack! This is a literal tragedy {0}'.format('<:virus:702269312924123186> ' * 1)
+    stringified_information = amadeusDriver.stringifyAnimeInformation().rstrip().lstrip()
+    if not stringified_information or stringified_information.isspace():
+        stringified_information = 'Theres nothing on the stack! {0} This {0} is {0} a {0} literal {0} tragedy {0}'.format('<:virus:702269312924123186>')
     await message.channel.send(stringified_information)
 
 async def parseAlias(message, args):
@@ -322,14 +322,13 @@ async def parsePrio(message, args):
 
 #TODO -> multi word tags? Is this even supported
 async def setPrio(message, args):
-    if len(args) < 2:
+    if len(args) != 3:
         errMsg = 'Please enter the form of: "!prio+ animeTitle/animeAlias numericValue/Tag".'
         await message.channel.send(errMsg)
         return
-    
-    animeTitleOrAlias = amadeusDriver.getTitleFromKey("".join(args[1:-1]))
-    if amadeusDriver.setPrio(animeTitleOrAlias, args[-1]):
-        await message.channel.send('{0} is now priority {1}'.format(animeTitleOrAlias, args[-1]))
+
+    if amadeusDriver.setPrio(args[1], args[2]):
+        await message.channel.send('{0} is now priority {1}'.format(args[1], args[2]))
     else:
         errMsg = 'Please confirm you have entered a valid anime name or alias.'
         await message.channel.send(errMsg)
