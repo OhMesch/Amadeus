@@ -81,6 +81,7 @@ async def on_message(message):
             return
         elif first_arg == '!exit' or first_arg == '!quit':
             await client.logout()
+            exit()
         await diagnoseMessage(message)
     except concurrent.futures._base.CancelledError as e:
         return
@@ -94,8 +95,8 @@ async def on_message(message):
 async def diagnoseMessage(message):
     stripped_message = message.content.replace("!", "")
     possibilities = [
-        "help", "stack", "stack+", "stack-", "alias", "setEp", "setSeason", 
-        "pop", "prio", "prio+", "prio-", "home", "exit", "quit"
+        "help", "stack+", "stack-", "alias", "setEp", "setSeason", 
+        "pop", "prio+", "prio-", "home", "exit", "quit"
     ]
     matches = difflib.get_close_matches(stripped_message, possibilities, 3, .6)
     if len(matches) != 0:
@@ -165,12 +166,13 @@ async def printStack(message, args):
 async def parseAlias(message, args):
     if message.content.startswith('!alias+'):
         await addAlias(message, args)
-        return
-    await printAlias(message, args)
+    else:
+        await message.channel.send('Use "!alias+ (anime name) (new alias)" to add an alias')
+    # await printAlias(message, args)
 
-async def printAlias(message, args):
-    allAlias = amadeusDriver.alias
-    await message.channel.send(allAlias)
+# async def printAlias(message, args):
+#     allAlias = amadeusDriver.alias
+#     await message.channel.send(allAlias)
 
 async def addAlias(message, args):
     if len(args) != 3:
@@ -315,7 +317,8 @@ async def parsePrio(message, args):
     elif message.content.startswith('!prio-'):
         await removePrio(message, args)
         return
-    await getPrio(message, args)
+    await message.channel.send('Use either "!prio+ (anime name) (priority)" or "!prio- (anime name) (priority)" to add or remove a priority')
+    # await getPrio(message, args)
 
 #TODO -> multi word tags? Is this even supported
 async def setPrio(message, args):
@@ -324,14 +327,14 @@ async def setPrio(message, args):
         await message.channel.send(errMsg)
         return
     
-    animeTitle = amadeusDriver.getTitleFromKey("".join(args[1:-1]))
-    #TODO getter?
-    if animeTitle in amadeusDriver.stack:
-        amadeusDriver.setPrio(animeTitle, args[-1])
+    animeTitleOrAlias = amadeusDriver.getTitleFromKey("".join(args[1:-1]))
+    if amadeusDriver.setPrio(animeTitleOrAlias, args[-1]):
+        await message.channel.send('{0} is now priority {1}'.format(animeTitleOrAlias, args[-1]))
     else:
         errMsg = 'Please confirm you have entered a valid anime name or alias.'
         await message.channel.send(errMsg)
         return
+
 
 #TODO -> multi word tags? Is this even supported
 async def removePrio(message, args):
@@ -348,13 +351,14 @@ async def removePrio(message, args):
         await message.channel.send(errMsg)
         return
 
-async def getPrio(message, args):
-    await message.channel.send("Numerical Priority List:")
-    await message.channel.send(amadeusDriver.numPrioManager)
-    await message.channel.send("\n\nTagged Priority List:")
-    await message.channel.send(amadeusDriver.tagPrioManager)
+# async def getPrio(message, args):
+#     await message.channel.send("Numerical Priority List:")
+#     await message.channel.send(amadeusDriver.numPrioManager)
+#     await message.channel.send("\n\nTagged Priority List:")
+#     await message.channel.send(amadeusDriver.tagPrioManager)
 
 #TODO - No idea if works for titles with spaces
+#TODO what does this do
 async def getHomeURL(message, args):
     args = message.content.split()
     if len(args) < 2:

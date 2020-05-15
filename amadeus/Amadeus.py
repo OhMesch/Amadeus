@@ -37,6 +37,22 @@ class Amadeus():
         return "URL Data:\n{0}\nStack Data:\n{1}\nAlias Data:\n{2}\nSeason Data:\n{3}\nNumeric Priority Manager:\n{4}\nTag Priority Manager:\n{5}\n".format(
             url_data, stack_data, alias_data, season_data, num_prio_data, tag_prio_data)
 
+    def __contains__(self, animeTitleOrAlias):
+        if animeTitleOrAlias in self.anime_url:
+            return True
+        for animeTitle, alias in self.anime_alias:
+            if animeTitleOrAlias == alias:
+                return True
+        return False
+
+    def getTitleFromAlias(self, animeTitleOrAlias):
+        if animeTitleOrAlias in self.anime_url:
+            return self.anime_url[animeTitleOrAlias]
+        for animeTitle, alias in self.anime_alias:
+            if animeTitleOrAlias == alias:
+                return animeTitle
+        return ''
+
     def setUpLogging(self, data_dir):
         logging_dir = os.path.join(data_dir, 'logging')
         if not os.path.exists(logging_dir):
@@ -82,7 +98,6 @@ class Amadeus():
         return animeNameClean
 
     def stringifyAnimeInformation(self):
-        # return str(self.numPrioManager) + '\n\n' + str(self.tagPrioManager)
         joining = []
         for full_title, episode_num in self.anime_ep.items():
             season = self.anime_season[full_title]
@@ -109,16 +124,18 @@ class Amadeus():
                 ' ' * 4, full_title, print_alias_string, str(season), str(episode_num), print_priority))
         return '\n'.join(joining)
 
-    def addAlias(self, existing_ey, new_key):
-        if ' ' in new_key:
-            errMsg = 'alias provided: {0} has whitespace in it, please remove the whitespace'.format(new_key)
+    def addAlias(self, animeTitle, alias):
+        #TODO remove exceptions
+        if ' ' in alias:
+            errMsg = 'alias provided: {0} has whitespace in it, please remove the whitespace'.format(alias)
             raise UnboundLocalError()
-        if existing_ey.lower() in self.anime_alias:
-            self.anime_alias[new_key] = self.anime_alias[existing_ey.lower()]
-            return existing_ey.lower()
-        elif existing_ey in self.anime_ep:
-            self.anime_alias[new_key] = existing_ey
-            return existing_ey
+        if animeTitle.lower() in self.anime_alias:
+            self.anime_alias[alias] = self.anime_alias[animeTitle.lower()]
+            return animeTitle.lower()
+        elif animeTitle in self.anime_ep:
+            self.anime_alias[alias] = animeTitle
+            return animeTitle
+        return False
 
     def removeAlias(self, alias):
         del self.anime_alias[alias]
@@ -178,16 +195,20 @@ class Amadeus():
                 return (currEpLink, currEpNum, anime)
         return (None, None, None)
 
-    def setPrio(self, anime, key):
+    def setPrio(self, animeTitleOrAlias, key):
+        animeTitle = self.getTitleFromAlias(animeTitleOrAlias)
+        if not animeTitle:
+            return False
         if checkers.is_integer(key):
             prioManager = self.numPrioManager
         else:
             prioManager = self.tagPrioManager
-        prioManager.addPrio(anime, key)
+        prioManager.addPrio(animeTitleOrAlias, key)
+        return True
 
-    def removePrio(self, anime, key):
+    def removePrio(self, animeTitleOrAlias, key):
         if checkers.is_integer(key):
             prioManager = self.numPrioManager
         else:
             prioManager = self.tagPrioManager
-        prioManager.removePrio(anime, key)
+        prioManager.removePrio(animeTitleOrAlias, key)

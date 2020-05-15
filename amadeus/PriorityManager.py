@@ -32,8 +32,8 @@ class PriorityManger():
         if priority not in self.prio:
             self.prio[priority] = []
         if prioTargetName not in self.prio[priority]:
-            self.prio[priority].append(prioTargetName)
-        self.logger.info('addPrio: for anime: {0} add priority: {1}'.format(prioTargetName, priority))
+            self.prio.addToList(priority, prioTargetName)
+            self.logger.info('addPrio: for anime: {0} add priority: {1}'.format(prioTargetName, priority))
 
     def removePrio(self, prioTargetName, priority):
         if priority in self.prio and prioTargetName in self.prio[priority]:

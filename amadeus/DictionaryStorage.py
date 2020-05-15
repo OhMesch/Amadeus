@@ -4,7 +4,7 @@ import pickle
 import json
 import logging
 
-# todo Add ability for multiple data stores (e.g. john_tom, john_kyle)
+# TODO Add ability for multiple data stores (e.g. john_tom, john_kyle)
 def getDictionaryStorage(filename, data_dir):
     return JSONDictionaryStorage(filename, data_dir)
     # return PickleDictionaryStorage(filename, data_dir)
@@ -40,6 +40,11 @@ class DictionaryStorage:
     def __setitem__(self, key, value):
         self.data[key] = value
         self.writeToStorage()
+
+    def addToList(self, key, value):
+        self.data[key].append(value)
+        self.writeToStorage()
+        return self
 
     def __iter__(self):
         return iter(self.data.keys())
