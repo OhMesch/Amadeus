@@ -112,16 +112,16 @@ class Amadeus():
                 print_alias_string = ' Aliases: [' + ', '.join(aliases) + ']'
 
             # Priority matching: TODO Uses O(N) loop to match aliases, probably need reverse dictionary
-            print_priority = ''
+            print_priority_string = ''
             priorities = []
             for priority in self.numPrioManager.getPriorities(full_title) + self.tagPrioManager.getPriorities(full_title):
                 if curr_full_title == full_title:
-                    priorities.append('"' + alias + '"')
+                    priorities.append('"' + priority + '"')
             if priorities:
-                print_alias_string = '\n{0}Priorities: ' + ', '.join(' ' * 4, priorities)
+                print_priority_string = '\n{0}Priorities: '.format(' ' * 4) + ', '.join(priorities)
 
             joining.append('**{1}**{2}:\n{0}Season {3} - Episode {4}{5}'.format(
-                ' ' * 4, full_title, print_alias_string, str(season), str(episode_num), print_priority))
+                ' ' * 4, full_title, print_alias_string, str(season), str(episode_num), print_priority_string))
         return '\n'.join(joining)
 
     def addAlias(self, animeTitle, alias):

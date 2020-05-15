@@ -22,7 +22,6 @@ class DictionaryStorage:
 
         if os.path.exists(self.data_filepath):
             self.loadFromStorage()
-        
 
     def __str__(self):
         string = "{\n"
@@ -42,9 +41,16 @@ class DictionaryStorage:
         self.writeToStorage()
 
     def addToList(self, key, value):
-        self.data[key].append(value)
-        self.writeToStorage()
-        return self
+        if key not in self.data:
+            self.data[key] = [value]
+            self.writeToStorage()
+            return True
+        else:
+            if value in self.data[key]:
+                return False
+            self.data[key].append(value)
+            self.writeToStorage()
+            return True
 
     def __iter__(self):
         return iter(self.data.keys())

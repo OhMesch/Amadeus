@@ -23,16 +23,14 @@ class PriorityManger():
 
     def getPriorities(self, wantedAnimeTitle):
         prios = []
-        for priority, animeTitle in self.prio.items():
-            if animeTitle == wantedAnimeTitle:
-                prios += priority
+        for priority, animeTitles in self.prio.items():
+            if wantedAnimeTitle in animeTitles:
+                prios.append(priority)
         return prios
 
     def addPrio(self, prioTargetName, priority):
-        if priority not in self.prio:
-            self.prio[priority] = []
-        if prioTargetName not in self.prio[priority]:
-            self.prio.addToList(priority, prioTargetName)
+        success = self.prio.addToList(priority, prioTargetName)
+        if success:
             self.logger.info('addPrio: for anime: {0} add priority: {1}'.format(prioTargetName, priority))
 
     def removePrio(self, prioTargetName, priority):
@@ -69,6 +67,11 @@ class NumericPriorityManger(PriorityManger):
         if prioTargetName in self.lookup:
             super().removePrio(prioTargetName, self.lookup[prioTargetName])
             del self.lookup[prioTargetName]
+
+    def getPriorities(self, wantedAnimeTitle):
+        if wantedAnimeTitle not in self.lookup:
+            return []
+        return [self.lookup[wantedAnimeTitle]]
 
     # TODO Would a list comprehension / mapping be better here?
     def getAnimeSequence(self):
