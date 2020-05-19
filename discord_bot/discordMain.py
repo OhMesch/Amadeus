@@ -70,9 +70,6 @@ async def on_message(message):
         elif first_arg == '!setSeason':
             await setCurrSeason(message, args)
             return
-        elif first_arg == '!watch':
-            await getCurrEpAndIncrement(message, args)
-            return
         elif first_arg == '!pop':
             await pop(message, args)
             return
@@ -109,19 +106,24 @@ async def help(message, args):
     helpMsg = 'Hello {0.author.mention}, I am Amadeus!'.format(message)
     helpMsg += '\nI exist to facilitate anime. 大やばい\n'
 
-    stackMsg = '\nTo get started, take a look at the stack with "!stack"'
+    stackMsg = '\nTo get started, take a look at the stack with **"!stack"**'
     stackMsg += '\nThe stack shows all the currently watched anime and the next episode to watch.'
 
     addAnimeMsg = "\nTo add an anime to the stack, you will need the CrunchyRoll page corresponding to the anime you want to add."
-    addAnimeMsg += "\nOnce you have your anime url, add it to the stack in the form of: \"!stack+ www.url-to-anime-home.com\"."
+    addAnimeMsg += "\nOnce you have your anime url, add it to the stack in the form of: \"**!stack+ www.url-to-anime-home.com\"**."
     addAnimeMsg += "\nAlternatively, if you would like to set an alias while adding the anime, use the syntax: \"!stack+ www.url-to-anime-home.com customAlias\".\n"
 
     aliasMsg = "\nAliases are anouther way to refer to, and interact with, an anime on the stack. Alias provide an alternative to using the full stack name for an anime."
-    aliasMsg += "\nAn alias can be added to an existing stack entry with either:\n{0}\n{1}".format("!alias+ anime-stack-name newAlias","!alias+ currAlias newAlias")
+    aliasMsg += "\nAn alias can be added to an existing stack entry with either:\n**{0}**\n**{1}**".format("!alias+ anime-stack-name newAlias","!alias+ currAlias newAlias")
+    
+    popMsg = '\nTo retrieve an anime from the stack according to the numerical priority, type: **"!pop"**'
+    popMsg += '\nTo retrieve a specific anime, type: **"!pop anime_name_or_alias"**'
+    popMsg += '\nTo retrieve an anime from the stack according to a tag priority, type: **"!pop tag_priority"** (anime_name_or_alias takes priority)'
 
     helpMsg += stackMsg
     helpMsg += addAnimeMsg
     helpMsg += aliasMsg
+    helpMsg += popMsg
     await message.channel.send(helpMsg)
 
 # Calls proper stack function
@@ -203,50 +205,6 @@ async def returnEpToUser(message, animeEpisodeName, currEpLink, currEpNum, currS
     await message.channel.send(succMsg)
     await message.channel.send(embed = embedEpisode)
 
-async def getCurrEpAndIncrement(message, args):
-    if len(args) != 2:
-        errMsg = 'Please enter the form of: "!get+ animeTitle/animeAlias".'
-        await message.channel.send(errMsg)
-        return
-
-    key = "".join(args[1:])
-    print("Entered key:", key)
-    animeEpisodeName = amadeusDriver.getTitleFromKey(key)
-    print("True key:", animeEpisodeName)
-
-    #TODO this can be broken up
-    #TODO Change stack everywhere to episdoes. Stack is a colloquialism we do not need in the code. 
-    if animeEpisodeName:
-        currEpNum = amadeusDriver.getCurrEpNumber(animeEpisodeName)
-        currSeasonNum = amadeusDriver.getCurrSeasonNumber(animeEpisodeName)
-        print("Current Ep: {0}, Current season: {1}".format(currEpNum, currSeasonNum))
-
-        currEpLink = amadeusDriver.getEpisodeFromTitle(animeEpisodeName, currEpNum)
-        if currEpLink:
-            await returnEpToUser(message, animeEpisodeName, currEpLink, currEpNum, currSeasonNum)
-            amadeusDriver.incrementStack(animeEpisodeName)
-            return
-            
-        currEpLink = amadeusDriver.getSeasonEpisodeFromTitle(animeEpisodeName, 0, currSeasonNum + 1)
-        if currEpLink:
-            await returnEpToUser(message, animeEpisodeName, currEpLink, currEpNum, currSeasonNum)
-            amadeusDriver.setEpisode(animeEpisodeName, 0)
-            amadeusDriver.setSeason(animeEpisodeName, currSeasonNum + 1)
-            return
-
-        currEpLink = amadeusDriver.getSeasonEpisodeFromTitle(animeEpisodeName, 1, currSeasonNum + 1)
-        if currEpLink:
-            await returnEpToUser(message, animeEpisodeName, currEpLink, currEpNum, currSeasonNum)
-            amadeusDriver.setEpisode(animeEpisodeName, 1)
-            amadeusDriver.setSeason(animeEpisodeName, currSeasonNum + 1)
-            return
-
-        errMsg = 'Could not find episode {0} of "{1}". Please double check it exists.\n{2}'.format(currEpNum, animeEpisodeName, amadeusDriver.getUrlFromTitle(animeEpisodeName))
-        await message.channel.send(errMsg)
-    else:
-        errMsg = '"{0}" not found in stack or alias list, please confirm the anime and try again.'.format(key)
-        await message.channel.send(errMsg)
-
 async def setCurrEp(message, args):
     args = message.content.split()
     if len(args) != 3:
@@ -296,8 +254,8 @@ async def pop(message, args):
         errMsg = 'Please enter the form of: "!pop <optionalTag>".'
         await message.channel.send(errMsg)
         
-    potentialTag = "".join(args[1:])
-    ep, currEpNum, anime = amadeusDriver.pop(potentialTag)
+    animeTitleOrAliasOrTag = "".join(args[1:])
+    ep, currEpNum, anime = amadeusDriver.pop(animeTitleOrAliasOrTag)
     
     if ep: 
         embedEpisode = discord.Embed(url=ep, title="Webscrap me from the link trasher", description="Oh No! See above!", color=16175669)

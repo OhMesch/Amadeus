@@ -56,12 +56,17 @@ class DictionaryStorage:
         return iter(self.data.keys())
 
     def __delitem__(self, key):
-        char_key = str(key)
-        del self.data[char_key]
+        if key not in self:
+            return False
+        del self.data[key]
         self.writeToStorage()
+        return True
 
     def get(self, key, defaultVal=None):
         return self.data.get(key, defaultVal)
+
+    def deleteKey(self, key):
+        return self.__delitem__(key)
 
     def items(self):
         for key in self:

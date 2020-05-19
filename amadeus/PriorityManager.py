@@ -75,10 +75,10 @@ class NumericPriorityManger(PriorityManger):
 
     # TODO Would a list comprehension / mapping be better here?
     def getAnimeSequence(self):
-        sorted_prio_keys = sorted(map(int, (list(self.prio.keys()))))
+        sorted_prio_keys = sorted(map(lambda x: (int(x), x), (list(self.prio.keys()))))
         anime_order = []
-        for key in sorted_prio_keys:
-            animes = self.prio[str(key)]
+        for _, orig_key in sorted_prio_keys:
+            animes = self.prio[orig_key]
             anime_order.extend(self.order_of_equal_list_provider(animes))
         return anime_order
     
