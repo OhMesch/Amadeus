@@ -73,12 +73,28 @@ class NumericPriorityManger(PriorityManger):
             return []
         return [self.lookup[wantedAnimeTitle]]
 
-    # TODO Would a list comprehension / mapping be better here?
-    def getAnimeSequence(self):
-        sorted_prio_keys = sorted(map(lambda x: (int(x), x), (list(self.prio.keys()))))
+    # TODO leetcode spagetti
+    def getAnimeSequence(self, avaliable_titles = []):
+        defaultPriority = 100
+
+        ## asigning prio to animes without a priority explicitly set
+        used = set()
+        for key in self.prio.keys():
+            animes = self.prio[key]
+            used = used.union(set(animes)) # TODO dont make O(N) operation here
+        unset_titles = list(set(avaliable_titles).difference(used))
+        allPrioritiesWithAnime = list(set(self.prio.keys()).union([defaultPriority]))
+
+        ## Iterating through priorities in order and returning a random order
+        sorted_prio_keys = sorted(map(lambda x: (int(x), x), (allPrioritiesWithAnime)))
         anime_order = []
-        for _, orig_key in sorted_prio_keys:
-            animes = self.prio[orig_key]
+        for int_key, orig_key in sorted_prio_keys:
+            animes = []
+            if orig_key in self.prio:
+                animes += self.prio[orig_key]
+            if int_key == defaultPriority:
+                animes += unset_titles
+            self.logger.debug('getAnimeSequence: Numeric PriorityManager, priority: {0}, animes: {1}'.format(int_key, animes))
             anime_order.extend(self.order_of_equal_list_provider(animes))
         return anime_order
     

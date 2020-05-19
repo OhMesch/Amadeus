@@ -228,15 +228,25 @@ class Amadeus():
 
     #TODO this can be clearer
     def pop(self, animeTitleOrAliasOrTag=''):
-        animeTitle = self.getTitleFromAlias(animeTitleOrAlias)
-        if not animeTitle:
-            return False
+        ## check if string is an alias or a title
+        animeTitle = self.getTitleFromAlias(animeTitleOrAliasOrTag)
+        if animeTitle:
+            currEpNum = self.getCurrEpNumber(animeTitle)
+            currEpLink = self.getEpisodeFromTitle(animeTitle, currEpNum)
+            if currEpLink:
+                self.incrementStack(animeTitle)
+                return (currEpLink, currEpNum, animeTitle)
+            return (None, None, None)
+
+        ## assuming the string is a tag
+        tag = animeTitleOrAliasOrTag
         if checkers.is_string(tag, minimum_length=1):
             popOrder = self.tagPrioManager.getAnimeSequence(tag)
         else:
-            popOrder = self.numPrioManager.getAnimeSequence()
+            allAvaliableTitles = self.anime_ep.keys()
+            popOrder = self.numPrioManager.getAnimeSequence(allAvaliableTitles)
 
-        #TODO DRY -> Can we reuse getEpAndIncriment? Might have a hard time if there is nothing there.
+        # TODO make this a function
         self.logger.debug('pop: poporder is: {0}'.format(popOrder))
         for anime in popOrder:
             currEpNum = self.getCurrEpNumber(anime)
