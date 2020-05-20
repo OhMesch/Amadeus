@@ -55,6 +55,12 @@ async def on_message(message):
         if first_arg == '!help':
             await help(message, args)
             return
+        elif first_arg.startswith('!undo'):
+            await undo(message, args)
+            return
+        elif first_arg.startswith('!redo'):
+            await redo(message, args)
+            return
         elif first_arg.startswith('!stack'):
             await parseStackMessage(message, args)
             return
@@ -93,7 +99,7 @@ async def diagnoseMessage(message):
     stripped_message = message.content.replace("!", "")
     possibilities = [
         "help", "stack+", "stack-", "alias", "setEp", "setSeason", 
-        "pop", "prio+", "prio-", "home", "exit", "quit"
+        "pop", "prio+", "prio-", "home", "exit", "quit", "undo", "redo"
     ]
     matches = difflib.get_close_matches(stripped_message, possibilities, 3, .6)
     if len(matches) != 0:
@@ -120,11 +126,23 @@ async def help(message, args):
     popMsg += '\nTo retrieve a specific anime, type: **"!pop anime_name_or_alias"**'
     popMsg += '\nTo retrieve an anime from the stack according to a tag priority, type: **"!pop tag_priority"** (anime_name_or_alias takes priority)'
 
+    undoRedoMsg = '\nType **"!undo"** or **"!redo"** to step backward or forward (actions only live for process life)'
+
+
     helpMsg += stackMsg
     helpMsg += addAnimeMsg
     helpMsg += aliasMsg
     helpMsg += popMsg
+    helpMsg += undoRedoMsg
     await message.channel.send(helpMsg)
+
+async def redo(message, args):
+    actionTaken = amadeusDriver.redo()
+    await message.channel.send('Took action "{0}" again'.format(actionTaken))
+
+async def undo(message, args):
+    actionTaken = amadeusDriver.undo()
+    await message.channel.send('Undid action "{0}"'.format(actionTaken))
 
 # Calls proper stack function
 async def parseStackMessage(message, args):
@@ -147,7 +165,8 @@ async def addAnimeToStack(message, args):
     if len(args) == 3:
         potential_alias = args[2]
     try:
-        amadeusDriver.addNewAnime(potential_url, potential_alias)
+        nameOfAnime = amadeusDriver.addNewAnime(potential_url, potential_alias)
+        await message.channel.send('added anime: {0}'.format(nameOfAnime))
     except ValueError as e:
         errMsg = 'Please confirm you have entered a valid url address, the link provided failed URL validation'
         await message.channel.send(errMsg)
@@ -156,8 +175,12 @@ async def addAnimeToStack(message, args):
         await message.channel.send(errMsg)
 
 async def removeAnimeFromStack(message, args):
-    errMsg = 'Not currently implemented.'
-    await message.channel.send(errMsg)
+    potential_name = args[1]
+    result = amadeusDriver.removeAnime(potential_name)
+    if result == False:
+        await message.channel.send('couldn\'t remove anime / alias titled: {0}'.format(potential_name))
+    else:
+        await message.channel.send('removed anime: {0}'.format(potential_name))
 
 async def printStack(message, args):
     stringified_information = amadeusDriver.stringifyAnimeInformation().rstrip().lstrip()

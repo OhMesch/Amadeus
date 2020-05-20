@@ -39,6 +39,12 @@ class DictionaryStorage:
     def __setitem__(self, key, value):
         self.data[key] = value
         self.writeToStorage()
+    
+    def set(self, key, value):
+        return self.__setitem__(key, value)
+
+    def remove(self, key):
+        return self.__delitem__(key)
 
     def addToList(self, key, value):
         if key not in self.data:
@@ -75,8 +81,11 @@ class DictionaryStorage:
     def keys(self):
         return self.data.keys()
 
+    def loadFromStorage(self):
+        raise Exception('This is the base class! Cannot call loadFromStorage!')
+
     def writeToStorage(self):
-        raise Exception('This is the base class! Cannot call writeToStorage')
+        raise Exception('This is the base class! Cannot call writeToStorage!')
 
 class JSONDictionaryStorage(DictionaryStorage):
     def __init__(self, filename, data_dir):

@@ -1,9 +1,11 @@
 import logging
 from logging.handlers import RotatingFileHandler
 import os
+from functools import partial
 
 from amadeus.DictionaryStorage import getDictionaryStorage
 from amadeus.CrunchyWebScraper import CrunchyWebScraper
+from amadeus.UndoManager import UndoManager
 from amadeus.PriorityManager import NumericPriorityManger, TagPriorityManger
 from validator_collection import validators, checkers
 
@@ -18,13 +20,14 @@ class Amadeus():
         self.setUpLogging(data_dir)
 
         # Create storage objects
-        self.anime_url = getDictionaryStorage("anime_url", data_dir)
-        self.anime_ep = getDictionaryStorage("anime_ep", data_dir)
-        self.anime_alias = getDictionaryStorage("anime_alias", data_dir)
+        self.anime_ep = getDictionaryStorage("anime_ep", data_dir) # this is the source of truth for existance or non-existance of an anime 
         self.anime_season = getDictionaryStorage("anime_season", data_dir)
+        self.anime_url = getDictionaryStorage("anime_url", data_dir)
+        self.anime_alias = getDictionaryStorage("anime_alias", data_dir)
         self.numPrioManager = NumericPriorityManger(data_dir)
         self.tagPrioManager = TagPriorityManger(data_dir)
         self.crunchy_scraper = CrunchyWebScraper()
+        self.undoManager = UndoManager()
         self.data_dir = data_dir
 
     def __str__(self): # could probably return each of these better
@@ -36,27 +39,6 @@ class Amadeus():
         tag_prio_data = str(self.tagPrioManager)
         return "URL Data:\n{0}\nStack Data:\n{1}\nAlias Data:\n{2}\nSeason Data:\n{3}\nNumeric Priority Manager:\n{4}\nTag Priority Manager:\n{5}\n".format(
             url_data, stack_data, alias_data, season_data, num_prio_data, tag_prio_data)
-
-    def __contains__(self, animeTitleOrAlias):
-        if not animeTitleOrAlias:
-            return False
-        if animeTitleOrAlias.lower() in self.anime_url:
-            return True
-        for animeTitle, alias in self.anime_alias.items():
-            if animeTitleOrAlias == alias:
-                return True
-        return False
-
-    def getTitleFromAlias(self, animeTitleOrAlias):
-        """ Can take in either alias or a title and retrun the cleaned title """
-        if not animeTitleOrAlias:
-            return ''
-        if animeTitleOrAlias in self.anime_ep: # TODO think about source of truth
-            return self.cleanAnimeName(animeTitleOrAlias)
-        for alias, animeTitle in self.anime_alias.items():
-            if animeTitleOrAlias == alias:
-                return self.cleanAnimeName(animeTitle)
-        return ''
 
     def setUpLogging(self, data_dir):
         logging_dir = os.path.join(data_dir, 'logging')
@@ -83,6 +65,34 @@ class Amadeus():
         self.logger.setLevel(logging.DEBUG)
         self.logger.warning('setUpLogging: Logger created')
 
+    def undo(self):
+        return self.undoManager.undo()
+
+    def redo(self):
+        return self.undoManager.redo()
+
+    def __contains__(self, animeTitleOrAlias):
+        if not animeTitleOrAlias:
+            return False
+        if animeTitleOrAlias.lower() in self.anime_ep:
+            return True
+        for animeTitle, alias in self.anime_alias.items():
+            if animeTitleOrAlias == alias:
+                return True
+        return False
+
+    def getTitleFromAlias(self, animeTitleOrAlias):
+        """ Can take in either alias or a title and retrun the cleaned title """
+        if not animeTitleOrAlias:
+            return ''
+        cleaned = self.cleanAnimeName(animeTitleOrAlias)
+        if cleaned in self.anime_ep: # TODO think about source of truth
+            return cleaned
+        for alias, animeTitle in self.anime_alias.items():
+            if animeTitleOrAlias == alias:
+                return self.cleanAnimeName(animeTitle)
+        return ''
+
     # TODO honestly im just using random python exceptions for control flow. ignore the names and add custom exceptions later
     def addNewAnime(self, url, episodeNumber = 1, seasonNumber = 1, alias = ''):
         if not validators.url(url):
@@ -92,10 +102,38 @@ class Amadeus():
             raise UnboundLocalError()
 
         animeNameClean = self.cleanAnimeName(url.split("/")[-1])
-        self.addUrl(animeNameClean, url)
-        self.anime_ep[animeNameClean] = episodeNumber
-        self.anime_season[animeNameClean] = seasonNumber
-        self.addAlias(animeNameClean, alias)
+        if animeNameClean in self:
+            raise Exception('already added bro')
+        
+        take_action_list, reverse_action_list = [], []
+        take_action_list.append(partial(self.anime_ep.set, animeNameClean, episodeNumber))
+        take_action_list.append(partial(self.anime_season.set, animeNameClean, seasonNumber))
+        take_action_list.append(partial(self.anime_url.set, animeNameClean, url))
+        take_action_list.append(partial(self.addAlias, animeNameClean, alias))
+
+        reverse_action_list.append(partial(self.removeAnime, animeNameClean))
+
+        self.undoManager.add_action_and_take(take_action_list, reverse_action_list, 'adding anime: {0} via URL: {1}'.format(animeNameClean, url))
+        return animeNameClean
+
+    def removeAnime(self, animeTitleOrAlias):
+        animeTitle = self.getTitleFromAlias(animeTitleOrAlias)
+        if not animeTitle:
+            return False
+        
+        take_action_list, reverse_action_list = [], []
+        take_action_list.append(partial(self.anime_ep.remove, animeTitle))
+        take_action_list.append(partial(self.anime_season.remove, animeTitle))
+        take_action_list.append(partial(self.anime_url.remove, animeTitle))
+        take_action_list.append(partial(self.removeAllAliasesForAnime, animeTitle)) 
+
+        reverse_action_list.append(partial(self.anime_ep.set, animeNameClean, episodeNumber))
+        reverse_action_list.append(partial(self.anime_season.set, animeNameClean, seasonNumber))
+        reverse_action_list.append(partial(self.anime_url.set, animeNameClean, url))
+        reverse_action_list.append(partial(self.addAlias, animeNameClean, alias))
+
+        self.undoManager.add_action_and_take(take_action_list, reverse_action_list, 'removing anime: {0}'.format(animeTitle))
+        return animeTitle
 
     def addNewAnimeNoUrl(self, animeName, episodeNumber = 1, seasonNumber = 1, alias = ''):
         if ' ' in alias:
@@ -103,7 +141,6 @@ class Amadeus():
             raise UnboundLocalError()
 
         animeNameClean = self.cleanAnimeName(animeName)
-        # self.addUrl(animeNameClean, url)
         self.anime_ep[animeNameClean] = episodeNumber
         self.anime_season[animeNameClean] = seasonNumber
         self.addAlias(animeNameClean, alias)
@@ -158,18 +195,17 @@ class Amadeus():
     def removeAlias(self, alias):
         return self.anime_alias.deleteKey(alias)
 
+    def removeAllAliasesForAnime(self, animeTitleToDelete):
+        for alias, animeTitle in list(self.anime_alias.items()):
+            if animeTitle == animeTitleToDelete:
+                self.anime_alias.deleteKey(alias)
+
     def setEpisode(self, animeTitleOrAlias, episodeNumber = 1):
         animeTitle = self.getTitleFromAlias(animeTitleOrAlias)
         if not animeTitle:
             return False
         self.anime_ep[animeTitle] = episodeNumber
 
-    # TODO don't we need to remove from a ton of different storages here
-    def removeAnime(self, animeTitleOrAlias):
-        animeTitle = self.getTitleFromAlias(animeTitleOrAlias)
-        if not animeTitle:
-            return False
-        return self.anime_ep.deleteKey(animeTitle)
 
     def getEpisodeFromTitle(self, animeTitleOrAlias, episode):
         animeTitle = self.getTitleFromAlias(animeTitleOrAlias)
@@ -188,19 +224,6 @@ class Amadeus():
         if not animeTitle:
             return False
         return self.anime_url[animeTitle]
-
-    def addUrl(self, animeTitleOrAlias, url):
-        animeTitle = self.getTitleFromAlias(animeTitleOrAlias)
-        if not animeTitle:
-            return False
-        self.anime_url[animeTitle] = url
-
-    def getTitleFromKey(self, key):
-        if key in self.anime_ep:
-            return key
-        if key in self.anime_alias:
-            return self.anime_alias[key]
-        return None
 
     def getCurrEpNumber(self, animeTitleOrAlias):
         animeTitle = self.getTitleFromAlias(animeTitleOrAlias)
@@ -246,7 +269,7 @@ class Amadeus():
             allAvaliableTitles = self.anime_ep.keys()
             popOrder = self.numPrioManager.getAnimeSequence(allAvaliableTitles)
 
-        # TODO make this a function
+        # TODO make this a function, and also make it so it doesn't constantly scrape via caching if anime is out
         self.logger.debug('pop: poporder is: {0}'.format(popOrder))
         for anime in popOrder:
             currEpNum = self.getCurrEpNumber(anime)

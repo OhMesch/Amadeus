@@ -76,6 +76,6 @@ class TestAmadeus():
         jojoUrl = "https://www.crunchyroll.com/jojos-bizarre-adventure"
         unique_amadeus.addNewAnime(jojoUrl, 1, 2, "jojo")
         
-        trueTitle = unique_amadeus.getTitleFromKey("jojo")
+        trueTitle = unique_amadeus.getTitleFromAlias("jojo")
         assert trueTitle == "Jojos Bizarre Adventure"
         # assert CrunchyWebScraper.getEpisodeLink(unique_amadeus.url[trueTitle], "1", unique_amadeus.season[trueTitle])
