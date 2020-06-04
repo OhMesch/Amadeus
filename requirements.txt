@@ -6,3 +6,4 @@ discord.py
 validator-collection
 requests
 hupper
+tinydb

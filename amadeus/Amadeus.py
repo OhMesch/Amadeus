@@ -1,10 +1,15 @@
+# other package files
+from amadeus.DictionaryStorage import getDictionaryStorage
+from amadeus.CrunchyWebScraper import CrunchyWebScraper
+from amadeus.PriorityManager import NumericPriorityManger, TagPriorityManger
+from amadeus.Transaction import TransactionTracker
+
+# std lib
 import logging
 from logging.handlers import RotatingFileHandler
 import os
 
-from amadeus.DictionaryStorage import getDictionaryStorage
-from amadeus.CrunchyWebScraper import CrunchyWebScraper
-from amadeus.PriorityManager import NumericPriorityManger, TagPriorityManger
+# from pip
 from validator_collection import validators, checkers
 
 class Amadeus():
@@ -16,16 +21,20 @@ class Amadeus():
         if not os.path.exists(data_dir):
             os.makedirs(data_dir)
         self.setUpLogging(data_dir)
+        
+        # transaction tracker
+        self.transaction_tracker = TransactionTracker()
 
         # Create storage objects
-        self.anime_url = getDictionaryStorage("anime_url", data_dir)
-        self.anime_ep = getDictionaryStorage("anime_ep", data_dir)
-        self.anime_alias = getDictionaryStorage("anime_alias", data_dir)
-        self.anime_season = getDictionaryStorage("anime_season", data_dir)
-        self.numPrioManager = NumericPriorityManger(data_dir)
-        self.tagPrioManager = TagPriorityManger(data_dir)
+        self.anime_url = getDictionaryStorage("anime_url", data_dir, self.transaction_tracker)
+        self.anime_ep = getDictionaryStorage("anime_ep", data_dir, self.transaction_tracker)
+        self.anime_alias = getDictionaryStorage("anime_alias", data_dir, self.transaction_tracker)
+        self.anime_season = getDictionaryStorage("anime_season", data_dir, self.transaction_tracker)
+        self.numPrioManager = NumericPriorityManger(data_dir, self.transaction_tracker)
+        self.tagPrioManager = TagPriorityManger(data_dir, self.transaction_tracker)
         self.crunchy_scraper = CrunchyWebScraper()
         self.data_dir = data_dir
+
 
     def __str__(self): # could probably return each of these better
         url_data = str(self.anime_url)

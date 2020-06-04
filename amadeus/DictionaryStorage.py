@@ -1,17 +1,22 @@
+from amadeus.Transaction import TransactionType, Transaction
+
 import sys
 import os.path
 import pickle
 import json
 import logging
+from enum import Enum, auto
+
+# from tinydb import TinyDB, Query
 
 # TODO Add ability for multiple data stores (e.g. john_tom, john_kyle)
-def getDictionaryStorage(filename, data_dir):
-    return JSONDictionaryStorage(filename, data_dir)
+def getDictionaryStorage(filename, data_dir, transaction_tracker = None):
+    return JSONDictionaryStorage(filename, data_dir, transaction_tracker)
     # return PickleDictionaryStorage(filename, data_dir)
 
 
 class DictionaryStorage:
-    def __init__(self, filename, data_dir, file_extension):
+    def __init__(self, filename, data_dir, file_extension, transaction_tracker = None):
         # Logging
         self.logger = logging.getLogger('my_fantastical_logger')
         self.logger.warning('__init__: {0} has been created'.format(self.__class__.__name__))
@@ -19,6 +24,9 @@ class DictionaryStorage:
         # Other
         self.data = dict()
         self.data_filepath = os.path.join(data_dir, filename + '.' + file_extension)
+
+        # transactions
+        transaction_tracker = transaction_tracker
 
         if os.path.exists(self.data_filepath):
             self.loadFromStorage()
@@ -30,6 +38,10 @@ class DictionaryStorage:
         string += "}"
         return string
 
+    def notify(self, transaction):
+        if self.transaction_tracker:
+            self.transaction_tracker.notify(transaction)
+
     def __getitem__(self, key):
         return self.data[key]
 
@@ -39,6 +51,9 @@ class DictionaryStorage:
     def __setitem__(self, key, value):
         self.data[key] = value
         self.writeToStorage()
+
+    def set(self, key, value):
+        self.__setitem__(key, value)
 
     def addToList(self, key, value):
         if key not in self.data:
@@ -75,12 +90,15 @@ class DictionaryStorage:
     def keys(self):
         return self.data.keys()
 
+    def loadFromStorage(self):
+        raise Exception('This is the base class! Cannot call loadFromStorage')
+
     def writeToStorage(self):
         raise Exception('This is the base class! Cannot call writeToStorage')
 
 class JSONDictionaryStorage(DictionaryStorage):
-    def __init__(self, filename, data_dir):
-        super().__init__(filename, data_dir, 'json')
+    def __init__(self, filename, data_dir, transaction_tracker = None):
+        super().__init__(filename, data_dir, 'json', transaction_tracker)
 
     def loadFromStorage(self):
         self.logger.warning('loadFromStorage: loading file: {0} as JSON'.format(self.data_filepath))
@@ -93,8 +111,8 @@ class JSONDictionaryStorage(DictionaryStorage):
             json.dump(self.data, fd)
 
 class PickleDictionaryStorage(DictionaryStorage):
-    def __init__(self, filename, data_dir):
-        super().__init__(filename, data_dir, 'pickle')
+    def __init__(self, filename, data_dir, transaction_tracker = None):
+        super().__init__(filename, data_dir, 'pickle', transaction_tracker)
 
     def loadFromStorage(self):
         self.logger.warning('loadFromStorage: reading from file: {0} as PICKLE binary'.format(self.data_filepath))

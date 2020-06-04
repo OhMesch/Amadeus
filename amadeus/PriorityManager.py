@@ -3,13 +3,13 @@ from amadeus.DictionaryStorage import getDictionaryStorage
 import logging
 
 class PriorityManger():
-    def __init__(self, filename, data_dir):
+    def __init__(self, filename, data_dir, transaction_tracker = None):
         # Logging
         self.logger = logging.getLogger('my_fantastical_logger')
         self.logger.warning('__init__: {0} has been created'.format(self.__class__.__name__))
 
         # Other
-        self.prio = getDictionaryStorage(filename, data_dir)
+        self.prio = getDictionaryStorage(filename, data_dir, transaction_tracker)
         self.order_of_equal_list_provider = lambda list_in: random.sample(list_in, len(list_in))
 
     def __str__(self):
@@ -42,8 +42,8 @@ class PriorityManger():
 
 
 class TagPriorityManger(PriorityManger):
-    def __init__(self, data_dir):
-        super().__init__("priotag", data_dir)
+    def __init__(self, data_dir, transaction_tracker = None):
+        super().__init__("priotag", data_dir, transaction_tracker)
 
     def getAnimeSequence(self, tag):
         animes = self.prio.get(tag, [])
@@ -53,8 +53,8 @@ class TagPriorityManger(PriorityManger):
         return super().__str__()
 
 class NumericPriorityManger(PriorityManger):
-    def __init__(self, data_dir):
-        super().__init__("prionumeric", data_dir)
+    def __init__(self, data_dir, transaction_tracker = None):
+        super().__init__("prionumeric", data_dir, transaction_tracker)
         self.lookup = getDictionaryStorage("reverseprionumeric", data_dir)
 
     def addPrio(self, prioTargetName, priority):
