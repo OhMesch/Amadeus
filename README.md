@@ -17,3 +17,6 @@ To pass in a data directory use the `-d` flag. Example:
 The last directory does not have to exist. The program will create it for you. 
 
 For the server to turn back on on filesystem refresh run: `hupper -m discordMain.py -d C:/storage/amadeus_data`
+
+## Required cert for python 3.8 in windows for discord.py
+https://crt.sh/?id=2835394
