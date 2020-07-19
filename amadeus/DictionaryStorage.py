@@ -26,7 +26,7 @@ class DictionaryStorage:
         self.data_filepath = os.path.join(data_dir, filename + '.' + file_extension)
 
         # transactions
-        transaction_tracker = transaction_tracker
+        self.transaction_tracker = transaction_tracker
 
         if os.path.exists(self.data_filepath):
             self.loadFromStorage()
@@ -40,7 +40,7 @@ class DictionaryStorage:
 
     def notify(self, transaction):
         if self.transaction_tracker:
-            self.transaction_tracker.notify(transaction)
+            self.transaction_tracker.notify(self, transaction)
 
     def __getitem__(self, key):
         return self.data[key]

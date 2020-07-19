@@ -56,6 +56,12 @@ class Amadeus():
                 return True
         return False
 
+    def undo(self):
+        pass
+
+    def redo(self):
+        pass
+
     def getTitleFromAlias(self, animeTitleOrAlias):
         """ Can take in either alias or a title and retrun the cleaned title """
         if not animeTitleOrAlias:

@@ -11,6 +11,7 @@ import traceback
 import concurrent
 import discord.utils
 import argparse
+import time
 
 
 arg_parser = argparse.ArgumentParser()
@@ -25,11 +26,12 @@ amadeusDriver = None
 
 @client.event
 async def on_ready():
-    global amadeusDriver
+    global amadeusDriver, time_started
     print('Logged in as')
     print(client.user.name)
     print(client.user.id)
     amadeusDriver = Amadeus(data_directory)
+    time_started = time.time()
     print('------')
 
 # TODO revisit naming convention of functions and variables
@@ -54,6 +56,15 @@ async def on_message(message):
 
         if first_arg == '!help':
             await help(message, args)
+            return
+        elif first_arg.startswith('!timeup'):
+            await parseTimeup(message, args)
+            return
+        elif first_arg.startswith('!undo'):
+            await parseUndo(message, args)
+            return
+        elif first_arg.startswith('!redo'):
+            await parseRedo(message, args)
             return
         elif first_arg.startswith('!stack'):
             await parseStackMessage(message, args)
@@ -92,15 +103,17 @@ async def on_message(message):
 async def diagnoseMessage(message):
     stripped_message = message.content.replace("!", "")
     possibilities = [
-        "help", "stack+", "stack-", "alias", "setEp", "setSeason", 
-        "pop", "prio+", "prio-", "home", "exit", "quit"
+        "help", "stack", "stack+", "stack-", "alias", "setEp", "setSeason", 
+        "pop", "prio+", "prio-", "home", "exit", "quit", "undo", "redo", "timeup"
     ]
     matches = difflib.get_close_matches(stripped_message, possibilities, 3, .6)
+    matches_with_quotes = ['"!' + x + '"' for x in matches]
     if len(matches) != 0:
-        formatting = "Unknown command. Did you mean to type one of the following: {0}?".format(", ".join(matches))
+        formatting = "Unknown command. Did you mean to type one of the following?\n{0}".format(", ".join(matches_with_quotes))
     else:
         formatting = "Unknown command. Type !help for assistance"
     await message.channel.send(formatting)
+
 
 async def help(message, args):
     helpMsg = 'Hello {0.author.mention}, I am Amadeus!'.format(message)
@@ -120,11 +133,70 @@ async def help(message, args):
     popMsg += '\nTo retrieve a specific anime, type: **"!pop anime_name_or_alias"**'
     popMsg += '\nTo retrieve an anime from the stack according to a tag priority, type: **"!pop tag_priority"** (anime_name_or_alias takes priority)'
 
+    undoRedoMsg = '\nType **"!undo"** or **"!redo"** to step backward or forward (actions only live for process life)'
+
     helpMsg += stackMsg
     helpMsg += addAnimeMsg
     helpMsg += aliasMsg
     helpMsg += popMsg
+    helpMsg += undoRedoMsg
     await message.channel.send(helpMsg)
+
+
+# https://stackoverflow.com/questions/4048651/python-function-to-convert-seconds-into-minutes-hours-and-days
+def display_time(seconds, granularity=5):
+    intervals = (
+        ('weeks', 604800),  # 60 * 60 * 24 * 7
+        ('days', 86400),    # 60 * 60 * 24
+        ('hours', 3600),    # 60 * 60
+        ('minutes', 60),
+        ('seconds', 1),
+    )
+    result = []
+
+    for name, count in intervals:
+        value = seconds // count
+        if value:
+            seconds -= value * count
+            if value == 1:
+                name = name.rstrip('s')
+            result.append("{} {}".format(int(value), name))
+    return ', '.join(result[:granularity])
+
+
+async def parseTimeup(message, args):
+    global time_started
+    time_str = display_time(time.time() - time_started)
+    to_send_message = 'Amadeus has been running for {0}'.format(time_str)
+    await message.channel.send(to_send_message)
+
+
+async def parseUndo(message, args):
+    action_undid = amadeusDriver.undo()
+    if action_undid:
+        to_send_message = 'Undid action {0}'.format()
+    else:
+        to_send_message = 'No actions to undo, nothing changed'
+    await message.channel.send(to_send_message)
+
+
+async def parseRedo(message, args):
+    action_undid = amadeusDriver.redo()
+    if action_undid:
+        to_send_message = 'Redid action {0}'.format()
+    else:
+        to_send_message = 'No actions to redo, nothing changed'
+    await message.channel.send(to_send_message)
+
+
+async def parseRedo(message, args):
+    action_undid = amadeusDriver.redo()
+    if action_undid:
+        message = 'Redid action {0}'.format()
+    else:
+        message = 'No actions to redo, nothing changed'
+    await message.channel.send(errMsg)
+
 
 # Calls proper stack function
 async def parseStackMessage(message, args):
