@@ -64,19 +64,23 @@ class CrunchyWebScraper():
     ## Actual web scraping ##
     def getEpisodeLink(self, url, requested_ep, season = "1"):
         eps_across_seasons = []
+        self.logger.info('getEpisodeLink: Scraping URL "{0}" for episode: {1}, season {2}'.format(url, requested_ep, season))
         all_eplinks = self.scrapeUrlForEpisodeLinks(url)
         for ep_link in all_eplinks:
             episodeNum = ep_link.split('/')[4].split('-')[1]
             if episodeNum == str(requested_ep):
+                self.logger.debug('Found potential episode "{0}"'.format(ep_link))
                 eps_across_seasons.append(ep_link)
         if eps_across_seasons:
+            self.logger.info('Found correct requested episode url "{0}"'.format(eps_across_seasons[::-1][int(season)-1]))
             return eps_across_seasons[::-1][int(season)-1]
     
     def scrapeUrlForEpisodeLinks(self, url):
         try:
             html_soup = self.getHTMLFromURL(url)
         except requests.exceptions.RequestException as err:
-            print("Unable to reach {}:\n{}\n".format(url, err))
+            self.logger.debug("Unable to reach {}:\n{}\n".format(url, err))
+            raise err
         else:
             titleString = url.split("/")[-1]
             return self.getEpisodeLinksFromHTML(html_soup, titleString)
@@ -86,14 +90,14 @@ class CrunchyWebScraper():
         self.logger.info('getHTMLFromURL: getting raw html from: {0}'.format(url))
         code = requests.get(url)
         html_plain_text = code.text
-        # self.logger.debug('raw html text: {0}'.format(html_plain_text))
+        self.logger.debug('raw html text: {0}'.format(html_plain_text))
         html_soup = BeautifulSoup(html_plain_text, "html.parser")
         return html_soup
 
     def getEpisodeLinksFromHTML(self, html, title):
         base_url = "https://www.crunchyroll.com"
         episode_links = []
-        for link in html.find_all(href=re.compile(title + "/episode")): 
+        for link in html.find_all(href=re.compile(title + "/episode")):
             new_url = link.get('href')
             episode_links.append(base_url + new_url)
         return episode_links

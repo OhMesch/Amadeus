@@ -56,11 +56,23 @@ class Amadeus():
                 return True
         return False
 
+    def begin_tracking(self):
+        if self.transaction_tracker:
+            self.transaction_tracker.begin_tracking()
+
+    def end_tracking(self):
+        if self.transaction_tracker:
+            self.transaction_tracker.end_tracking()
+
     def undo(self):
-        pass
+        if self.transaction_tracker:
+            self.transaction_tracker.end_tracking()
+            return self.transaction_tracker.undo()
 
     def redo(self):
-        pass
+        if self.transaction_tracker:
+            self.transaction_tracker.end_tracking()
+            return self.transaction_tracker.redo()
 
     def getTitleFromAlias(self, animeTitleOrAlias):
         """ Can take in either alias or a title and retrun the cleaned title """
@@ -82,7 +94,7 @@ class Amadeus():
         self.logger = logging.getLogger('my_fantastical_logger')
         
         ## handlers ##
-        f_handler = RotatingFileHandler(log_file, maxBytes=20000, backupCount=3)
+        f_handler = RotatingFileHandler(log_file, maxBytes=2000000, backupCount=3)
         f_format = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         f_handler.setFormatter(f_format)
         self.logger.addHandler(f_handler)
@@ -107,11 +119,15 @@ class Amadeus():
             raise UnboundLocalError()
 
         animeNameClean = self.cleanAnimeName(url.split("/")[-1])
+        if animeNameClean in self.anime_url:
+            return animeNameClean, False
         self.addUrl(animeNameClean, url)
         self.anime_ep[animeNameClean] = episodeNumber
         self.anime_season[animeNameClean] = seasonNumber
         self.addAlias(animeNameClean, alias)
+        return animeNameClean, True
 
+    # wait why is this useful?
     def addNewAnimeNoUrl(self, animeName, episodeNumber = 1, seasonNumber = 1, alias = ''):
         if ' ' in alias:
             errMsg = 'alias provided: {0} has whitespace in it, please remove the whitespace'.format(alias)
@@ -122,6 +138,27 @@ class Amadeus():
         self.anime_ep[animeNameClean] = episodeNumber
         self.anime_season[animeNameClean] = seasonNumber
         self.addAlias(animeNameClean, alias)
+
+    def removeAnime(self, animeTitleOrAlias):
+        animeTitle = self.getTitleFromAlias(animeTitleOrAlias)
+        if not animeTitle:
+            return False
+        
+        raise Exception('this doesnt work tbh')
+
+        take_action_list, reverse_action_list = [], []
+        # take_action_list.append(partial(self.anime_ep.remove, animeTitle))
+        # take_action_list.append(partial(self.anime_season.remove, animeTitle))
+        # take_action_list.append(partial(self.anime_url.remove, animeTitle))
+        # take_action_list.append(partial(self.removeAllAliasesForAnime, animeTitle)) 
+
+        # reverse_action_list.append(partial(self.anime_ep.set, animeNameClean, episodeNumber))
+        # reverse_action_list.append(partial(self.anime_season.set, animeNameClean, seasonNumber))
+        # reverse_action_list.append(partial(self.anime_url.set, animeNameClean, url))
+        # reverse_action_list.append(partial(self.addAlias, animeNameClean, alias))
+
+        self.undoManager.add_action_and_take(take_action_list, reverse_action_list, 'removing anime: {0}'.format(animeTitle))
+        return animeTitle
 
     def cleanAnimeName(self, dirtyName):
         animeNameLower = dirtyName.replace('-',' ').lower()
@@ -243,7 +280,7 @@ class Amadeus():
 
     #TODO this can be clearer
     def pop(self, animeTitleOrAliasOrTag=''):
-        ## check if string is an alias or a title
+        ## if selected specific anime, check if string is an alias or a title
         animeTitle = self.getTitleFromAlias(animeTitleOrAliasOrTag)
         if animeTitle:
             currEpNum = self.getCurrEpNumber(animeTitle)

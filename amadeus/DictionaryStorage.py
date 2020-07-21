@@ -40,7 +40,7 @@ class DictionaryStorage:
 
     def notify(self, transaction):
         if self.transaction_tracker:
-            self.transaction_tracker.notify(self, transaction)
+            self.transaction_tracker.notify(transaction)
 
     def __getitem__(self, key):
         return self.data[key]
@@ -48,34 +48,60 @@ class DictionaryStorage:
     def __contains__(self, key):
         return bool(key in self.data)
 
-    def __setitem__(self, key, value):
-        self.data[key] = value
-        self.writeToStorage()
-
     def set(self, key, value):
         self.__setitem__(key, value)
+
+    def __setitem__(self, key, value):
+        # for undo / redo
+        old_value = None
+        transaction_type = TransactionType.KEY_CREATE
+        if key in self.data:
+            old_value = self.data[key]
+            transaction_type = TransactionType.KEY_MODIFY
+
+        self.data[key] = value
+        self.writeToStorage()
+        transaction = Transaction(self, transaction_type, key, old_value, value)
+        self.notify(transaction)
 
     def addToList(self, key, value):
         if key not in self.data:
             self.data[key] = [value]
             self.writeToStorage()
-            return True
         else:
             if value in self.data[key]:
                 return False
             self.data[key].append(value)
             self.writeToStorage()
-            return True
+        transaction = Transaction(self, TransactionType.LIST_ADD, key, None, value)
+        self.notify(transaction)
+        return True
 
-    def __iter__(self):
-        return iter(self.data.keys())
+    def removeFromList(self, key, value):
+        if key not in self.data:
+            return False
+        if value not in self.data[key]:
+            return False
+        self.data[key].remove(value)
+        if len(self.data[key]) == 0:
+            del self.data[key]
+        self.writeToStorage()
+        transaction = Transaction(self, TransactionType.LIST_REMOVE, key, value, None)
+        self.notify(transaction)
+        return True
 
     def __delitem__(self, key):
         if key not in self:
             return False
+        old_value = self.data[key]
         del self.data[key]
         self.writeToStorage()
+        transaction = Transaction(self, TransactionType.KEY_DELETE, key, old_value, None)
+        self.notify(transaction)
         return True
+
+    def __iter__(self):
+        return iter(self.data.keys())
 
     def get(self, key, defaultVal=None):
         return self.data.get(key, defaultVal)

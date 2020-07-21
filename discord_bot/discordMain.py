@@ -12,6 +12,7 @@ import concurrent
 import discord.utils
 import argparse
 import time
+import hupper
 
 
 arg_parser = argparse.ArgumentParser()
@@ -33,6 +34,8 @@ async def on_ready():
     amadeusDriver = Amadeus(data_directory)
     time_started = time.time()
     print('------')
+    bot_spam_channel = client.get_channel(596532204629262367)
+    await bot_spam_channel.send("Logged in as {0}: {1}".format(client.user.name, client.user.id))
 
 # TODO revisit naming convention of functions and variables
 # TODO add rename tag function
@@ -54,8 +57,14 @@ async def on_message(message):
         args = message.content.split()
         first_arg = args[0]
 
+        amadeusDriver.begin_tracking() # Warning: this entire concept depends on singlethreading of the discord bot
+
         if first_arg == '!help':
             await help(message, args)
+            return
+        elif first_arg.startswith('!reboot') or first_arg.startswith('!restart'):
+            await message.channel.send("Starting reboot now")
+            hupper.start_reloader('myapp.scripts.serve.main').trigger_reload()
             return
         elif first_arg.startswith('!timeup'):
             await parseTimeup(message, args)
@@ -96,15 +105,17 @@ async def on_message(message):
     except Exception as e:
         stacktrace = traceback.format_exc()
         print(stacktrace)
-        channel = client.get_channel(632649941986050048)
-        await channel.send("Exception occured when {0} said: \"{1}\". Stack trace:".format(message.author, message.content))
-        await channel.send(stacktrace)
+        bot_exceptions_channel = client.get_channel(632649941986050048)
+        await bot_exceptions_channel.send("Exception occured when {0} said: \"{1}\". Stack trace:".format(message.author, message.content))
+        await bot_exceptions_channel.send(stacktrace)
+    finally:
+        amadeusDriver.end_tracking()
 
 async def diagnoseMessage(message):
     stripped_message = message.content.replace("!", "")
     possibilities = [
         "help", "stack", "stack+", "stack-", "alias", "setEp", "setSeason", 
-        "pop", "prio+", "prio-", "home", "exit", "quit", "undo", "redo", "timeup"
+        "pop", "prio+", "prio-", "home", "exit", "quit", "undo", "redo", "timeup", "reboot", "restart"
     ]
     matches = difflib.get_close_matches(stripped_message, possibilities, 3, .6)
     matches_with_quotes = ['"!' + x + '"' for x in matches]
@@ -172,11 +183,11 @@ async def parseTimeup(message, args):
 
 
 async def parseUndo(message, args):
-    action_undid = amadeusDriver.undo()
-    if action_undid:
-        to_send_message = 'Undid action {0}'.format()
+    batch_transactions_undid = amadeusDriver.undo()
+    if batch_transactions_undid:
+        to_send_message = 'Undid action\n```{0}```'.format(batch_transactions_undid)
     else:
-        to_send_message = 'No actions to undo, nothing changed'
+        to_send_message = 'No actions to undo, nothing has changed'
     await message.channel.send(to_send_message)
 
 
@@ -185,17 +196,8 @@ async def parseRedo(message, args):
     if action_undid:
         to_send_message = 'Redid action {0}'.format()
     else:
-        to_send_message = 'No actions to redo, nothing changed'
+        to_send_message = 'No actions to redo, nothing has changed'
     await message.channel.send(to_send_message)
-
-
-async def parseRedo(message, args):
-    action_undid = amadeusDriver.redo()
-    if action_undid:
-        message = 'Redid action {0}'.format()
-    else:
-        message = 'No actions to redo, nothing changed'
-    await message.channel.send(errMsg)
 
 
 # Calls proper stack function
@@ -219,7 +221,11 @@ async def addAnimeToStack(message, args):
     if len(args) == 3:
         potential_alias = args[2]
     try:
-        amadeusDriver.addNewAnime(potential_url, potential_alias)
+        nameOfAnime, success = amadeusDriver.addNewAnime(potential_url, 1, 1, potential_alias)
+        if success:
+            await message.channel.send('Added anime: "{0}" to the stack'.format(nameOfAnime))
+        else:
+            await message.channel.send('Did not add anime: "{0}" to the stack, maybe it already is on the stack?'.format(nameOfAnime))
     except ValueError as e:
         errMsg = 'Please confirm you have entered a valid url address, the link provided failed URL validation'
         await message.channel.send(errMsg)
@@ -228,8 +234,12 @@ async def addAnimeToStack(message, args):
         await message.channel.send(errMsg)
 
 async def removeAnimeFromStack(message, args):
-    errMsg = 'Not currently implemented.'
-    await message.channel.send(errMsg)
+    potential_name = args[1]
+    result = amadeusDriver.removeAnime(potential_name)
+    if result == False:
+        await message.channel.send('couldn\'t remove anime / alias titled: {0}'.format(potential_name))
+    else:
+        await message.channel.send('removed anime: {0}'.format(potential_name))
 
 async def printStack(message, args):
     stringified_information = amadeusDriver.stringifyAnimeInformation().rstrip().lstrip()
@@ -266,7 +276,7 @@ async def addAlias(message, args):
         succMsg = 'Added "{0}" as an alias for "{1}".'.format(newAlias, aliasOrTitle)
         await message.channel.send(succMsg)
     else:
-        errMsg = 'Please confirm you have entered a valid anime name. Could not find {0}'.format(animeNameClean)
+        errMsg = 'Please confirm you have entered a valid anime name. Could not find anime named "{0}"'.format(animeNameClean)
         await message.channel.send(errMsg)
 
 async def returnEpToUser(message, animeEpisodeName, currEpLink, currEpNum, currSeasonNum):
